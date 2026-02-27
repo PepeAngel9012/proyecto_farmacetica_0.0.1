@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <title>Fénix Hospital - Business Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #1e40af; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex h-screen overflow-hidden transition-colors duration-300 font-sans">
+    
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="mod-rec" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-96 border-t-4 border-blue-500 text-slate-900 dark:text-white">
+            <h3 class="text-xl font-bold mb-4">Recepción de Mercancía</h3>
+            <input type="text" id="r_lot" placeholder="Lote del producto" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+            <input type="date" id="r_cad" class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('mod-rec').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cerrar</button>
+                <button onclick="confirmarRec()" class="flex-1 p-2 bg-blue-600 text-white rounded font-bold">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+        <form onsubmit="event.preventDefault(); iniciarSesion();" class="bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-2xl w-80 text-center border-b-8 border-blue-600">
+            <h1 class="text-3xl font-bold mb-8 dark:text-white uppercase tracking-tighter">Fénix ERP</h1>
+            <input type="text" id="l_u" placeholder="Usuario" required class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
+            <input type="password" id="l_p" placeholder="Contraseña" required class="w-full mb-8 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition">Entrar</button>
+        </form>
+    </div>
+
+    <aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-2xl">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center text-white font-black tracking-widest">🏥 FÉNIX<button onclick="toggleTema()">🌓</button></div>
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <button onclick="cambiarVista('v-dash')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📊 Dashboard</button>
+            <button onclick="cambiarVista('v-alm')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📦 Almacén</button>
+            <div id="m-scm" class="hidden pt-4 border-t border-slate-800 space-y-1">
+                <button onclick="cambiarVista('v-com')" class="w-full text-left p-3 rounded-lg text-green-400 font-bold hover:bg-blue-600 hover:text-white">🛒 Compras</button>
+                <button onclick="cambiarVista('v-pro')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏢 Proveedores</button>
+                <button onclick="cambiarVista('v-kar')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🕒 Kárdex</button>
+            </div>
+            <div id="m-adm" class="hidden pt-4 border-t border-slate-800 space-y-1">
+                <button onclick="cambiarVista('v-fin')" class="w-full text-left p-3 rounded-lg text-yellow-500 font-bold hover:bg-blue-600 hover:text-white">💰 Finanzas</button>
+                <button onclick="cambiarVista('v-usr')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">👥 Usuarios</button>
+            </div>
+        </nav>
+        <div class="p-4 bg-black/20 text-center"><p id="lbl-u" class="text-white font-bold uppercase text-sm"></p><p id="lbl-r" class="text-[10px] text-blue-400 mb-2"></p><button onclick="cerrarSesion()" class="text-xs hover:text-red-400 underline">Cerrar Sesión</button></div>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto relative bg-slate-50 dark:bg-slate-900">
+        <div id="live" class="hidden absolute top-6 right-8 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold animate-pulse tracking-widest">EN VIVO</div>
+        
+        <div id="v-dash" class="hidden space-y-6">
+            <h2 class="text-3xl font-bold dark:text-white">Inteligencia de Negocio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-blue-500">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">Lotes Activos</p>
+                    <p id="d-lot" class="text-3xl font-bold mt-2">0</p>
+                </div>
+                <div id="card-utilidad" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-indigo-600">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">Utilidad Neta</p>
+                    <p id="d-uti" class="text-3xl font-bold mt-2">$0</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-orange-500">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">En Riesgo</p>
+                    <p id="d-rie" class="text-3xl font-bold mt-2 text-orange-500">0</p>
+                </div>
+            </div>
+
+            <div id="panel-alertas" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-2xl shadow-sm">
+                <h3 class="text-red-700 dark:text-red-400 font-bold flex items-center gap-2 mb-4 text-sm">⚠️ ALERTAS DE REABASTECIMIENTO</h3>
+                <div id="lista-alertas" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+                    <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">Balance de Inventario</h3>
+                    <canvas id="gInv"></canvas>
+                </div>
+                <div class="space-y-6">
+                    <div id="panel-top" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+                        <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">🏆 Productos más demandados</h3>
+                        <div id="lista-top" class="space-y-2"></div>
+                    </div>
+                    <div id="b-gFin" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow"><canvas id="gFin"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="v-alm" class="hidden space-y-6">
+            <div class="flex justify-between items-center"><h2 class="text-3xl font-bold dark:text-white">Almacén</h2><button onclick="expPDF('t-inv','Inventario')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">📄 PDF</button></div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="space-y-4">
+                    <form onsubmit="event.preventDefault(); regE();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-t-4 border-green-500">
+                        <h3 class="font-bold mb-4 uppercase text-[10px] text-slate-500">Entrada Manual</h3>
+                        <input type="text" id="e_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <input type="text" id="e_l" placeholder="Lote" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none font-mono">
+                        <input type="number" id="e_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <input type="date" id="e_d" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none text-sm">
+                        <input type="text" id="e_p" placeholder="Origen" required class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Ingresar</button>
+                    </form>
+                    <form onsubmit="event.preventDefault(); regS();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-t-4 border-orange-500">
+                        <h3 class="font-bold mb-4 uppercase text-[10px] text-slate-500">Salida (FEFO)</h3>
+                        <input type="text" id="s_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <input type="number" id="s_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <input type="text" id="s_o" placeholder="Destino" required class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                        <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-lg font-bold">Surtir</button>
+                    </form>
+                </div>
+                <div class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden flex flex-col">
+                    <div class="p-4 border-b dark:border-slate-700"><input type="text" id="f-inv" onkeyup="fil('t-inv','f-inv')" placeholder="🔍 Filtrar..." class="w-full p-2 border rounded-lg dark:bg-slate-700 outline-none"></div>
+                    <div class="overflow-y-auto h-[550px]"><table id="t-inv" class="w-full text-left text-sm"><thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 font-bold uppercase text-[10px] text-slate-500"><tr><th class="p-4">Medicamento</th><th class="p-4">Lote</th><th class="p-4">Stock</th><th class="p-4">Vence</th></tr></thead><tbody id="b-inv" class="divide-y dark:divide-slate-700"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="v-com" class="hidden space-y-6">
+            <h2 class="text-3xl font-bold dark:text-white">Órdenes de Compra</h2>
+            <form onsubmit="event.preventDefault(); crearOC();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-8 border-teal-500 flex gap-4 items-end">
+                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Proveedor</label><select id="o_p" class="w-full p-2 border rounded-lg dark:bg-slate-700"></select></div>
+                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Producto</label><input type="text" id="o_m" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
+                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Cant.</label><input type="number" id="o_c" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
+                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Costo $</label><input type="number" step="0.01" id="o_t" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
+                <button type="submit" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold">Generar OC</button>
+            </form>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden"><table id="t-com" class="w-full text-left text-sm"><thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500"><tr><th class="p-4">Fecha</th><th class="p-4">Proveedor</th><th class="p-4">Producto</th><th class="p-4">Total</th><th class="p-4 text-center">Estado</th></tr></thead><tbody id="b-com" class="divide-y dark:divide-slate-700"></tbody></table></div>
+        </div>
+
+        <div id="v-fin" class="hidden space-y-6"><h2 class="text-3xl font-bold text-yellow-500">Finanzas</h2><form onsubmit="event.preventDefault(); regFin();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-yellow-500"><select id="f_t" class="p-2 border rounded"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select><input type="number" step="0.01" id="f_m" placeholder="Monto" class="p-2 border rounded"><input type="text" id="f_c" placeholder="Concepto" class="p-2 border rounded flex-1"><button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded font-bold">Guardar</button></form><div class="bg-white dark:bg-slate-800 rounded h-[450px] overflow-y-auto"><table id="t-fin" class="w-full text-sm"><thead><tr class="bg-slate-50 dark:bg-slate-950 font-bold text-slate-500 uppercase text-[10px]"><th>Fecha</th><th>Tipo</th><th>Concepto</th><th class="text-right">Monto</th></tr></thead><tbody id="b-fin" class="divide-y"></tbody></table></div></div>
+        <div id="v-kar" class="hidden space-y-4"><h2 class="text-2xl font-bold dark:text-white">Kárdex de Auditoría</h2><div class="bg-white dark:bg-slate-800 rounded shadow h-[600px] overflow-y-auto"><table id="t-mov" class="w-full text-sm"><thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 text-slate-500 font-bold uppercase text-[10px]"><tr><th class="p-4">Fecha</th><th class="p-4">Operación</th><th class="p-4">Ítem</th><th class="p-4 text-center">Cantidad</th><th class="p-4">Detalle</th></tr></thead><tbody id="b-mov" class="divide-y dark:divide-slate-700"></tbody></table></div></div>
+        <div id="v-usr" class="hidden space-y-4"><h2 class="text-2xl font-bold dark:text-white">Usuarios</h2><form onsubmit="event.preventDefault(); crearUsr();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end"><input type="text" id="u_nom" placeholder="User" required class="p-2 border rounded flex-1 dark:bg-slate-700"><input type="password" id="u_pas" placeholder="Pass" required class="p-2 border rounded flex-1 dark:bg-slate-700"><select id="u_rol" class="p-2 border rounded flex-1 dark:bg-slate-700"><option value="OPERADOR">Operador</option><option value="SUPERVISOR">Supervisor</option><option value="ADMIN">Admin</option></select><button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Añadir</button></form><table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-usr" class="divide-y"></tbody></table></div>
+        <div id="v-pro" class="hidden space-y-4"><h2 class="text-2xl font-bold dark:text-white">Proveedores</h2><form onsubmit="event.preventDefault(); crearProv();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 border-l-8 border-indigo-600"><input type="text" id="p_nom" placeholder="Empresa" required class="p-2 border rounded flex-1 dark:bg-slate-700"><input type="text" id="p_con" placeholder="Contacto" required class="p-2 border rounded flex-1 dark:bg-slate-700"><button type="submit" class="bg-indigo-600 text-white px-8 py-2 rounded font-bold">Registrar</button></form><table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-prov" class="divide-y"></tbody></table></div>
+    </main>
+
+    <script>
+        let uLog=null, rLog=null, ws=null, cInv=null, cFin=null, ordenPendiente=null;
+        function getHeaders() { return {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}; }
+        function showToast(m, t='success') { const c = document.getElementById('toast-container'), e = document.createElement('div'); e.className = `px-6 py-4 rounded-lg text-white font-bold shadow-2xl transition-all ${t==='success'?'bg-green-600':'bg-red-600'}`; e.innerText = m; c.appendChild(e); setTimeout(()=>e.remove(), 3000); }
+        function toggleTema() { document.documentElement.classList.toggle('dark'); }
+        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
+        function fil(t,i) { const b = document.getElementById(i).value.toLowerCase(), f = document.getElementById(t).getElementsByTagName('tr'); for(let j=1; j<f.length; j++) f[j].style.display = f[j].innerText.toLowerCase().includes(b) ? "" : "none"; }
+
+        function conectarWS() { ws = new WebSocket(`ws://${window.location.host}/ws`); ws.onopen = () => document.getElementById('live').classList.remove('hidden'); ws.onmessage = (e) => { if(e.data === "update") syncAll(); }; ws.onclose = () => { document.getElementById('live').classList.add('hidden'); setTimeout(conectarWS, 3000); }; }
+        function syncAll() { cargarDashboard(); cargarInventario(); if(rLog==='ADMIN'||rLog==='SUPERVISOR'){cargarHistorial(); cargarUsuarios(); cargarProveedores(); cargarCompras();} if(rLog==='ADMIN') cargarFinanzas(); }
+
+        async function iniciarSesion() {
+            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: document.getElementById('l_u').value, password: document.getElementById('l_p').value}) });
+            if(res.ok) {
+                const d = await res.json(); localStorage.setItem('token', d.access_token); uLog = d.username; rLog = d.rol;
+                document.getElementById('lbl-u').innerText = uLog; document.getElementById('lbl-r').innerText = rLog;
+                document.getElementById('login-screen').classList.add('hidden');
+                if(rLog === 'ADMIN' || rLog === 'SUPERVISOR') document.getElementById('m-scm').classList.remove('hidden');
+                if(rLog === 'ADMIN') { document.getElementById('m-adm').classList.remove('hidden'); document.getElementById('card-utilidad').classList.remove('hidden'); document.getElementById('b-gFin').classList.remove('hidden'); }
+                conectarWS(); cambiarVista('v-dash'); showToast(`Bienvenido ${uLog}`);
+            } else showToast("Acceso denegado", "error");
+        }
+
+        function cambiarVista(id) { ['v-dash','v-alm', 'v-kar', 'v-usr', 'v-fin', 'v-pro', 'v-com'].forEach(v => { const el=document.getElementById(v); if(el) el.classList.add('hidden'); }); document.getElementById(id).classList.remove('hidden'); syncAll(); }
+
+        async function cargarDashboard() {
+            const res = await fetch('/api/dashboard', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json();
+            document.getElementById('d-lot').innerText = d.total_lotes; document.getElementById('d-rie').innerText = d.en_riesgo;
+            if(rLog === 'ADMIN') { 
+                document.getElementById('d-uti').innerText = `$${d.utilidad.toFixed(2)}`;
+                document.getElementById('d-uti').className = d.utilidad >= 0 ? "text-3xl font-bold mt-2 text-indigo-600" : "text-3xl font-bold mt-2 text-red-600";
+                if(cFin) cFin.destroy(); cFin = new Chart(document.getElementById('gFin'), { type: 'bar', data: { labels:['Ingresos','Gastos'], datasets:[{data:[d.ingresos, d.gastos], backgroundColor:['#10b981','#ef4444'], borderRadius:4}] }, options:{plugins:{legend:{display:false}}} }); 
+            }
+            
+            // ALERTAS Y TOP PRODUCTOS
+            const pA = document.getElementById('panel-alertas'), lA = document.getElementById('lista-alertas'), lT = document.getElementById('lista-top');
+            if(d.alertas_stock.length > 0) {
+                pA.classList.remove('hidden'); lA.innerHTML = '';
+                d.alertas_stock.forEach(a => { lA.innerHTML += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-red-600 shadow-sm flex justify-between items-center text-slate-900 dark:text-white"><div><p class="text-[9px] font-bold text-red-500 uppercase">Agotándose</p><p class="font-bold text-xs">${a.medicamento}</p></div><p class="text-xl font-black text-red-600">${a.stock}</p></div>`; });
+            } else pA.classList.add('hidden');
+
+            lT.innerHTML = d.top_productos.length > 0 ? '' : '<p class="text-slate-400 italic text-xs">Aún no hay ventas...</p>';
+            d.top_productos.forEach((p, idx) => { lT.innerHTML += `<div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-xs"><span class="font-bold">#${idx+1} ${p.nombre}</span><span class="bg-blue-600 text-white px-2 py-1 rounded-full font-bold">${p.ventas} Surtidos</span></div>`; });
+
+            if(cInv) cInv.destroy(); cInv = new Chart(document.getElementById('gInv'), { type: 'doughnut', data: { labels:['Sanos','Riesgo'], datasets:[{data:[d.total_lotes-d.en_riesgo, d.en_riesgo], backgroundColor:['#3b82f6','#f97316'], borderWidth:0}] }, options:{cutout:'75%'} });
+        }
+
+        async function cargarInventario() { const res = await fetch('/api/inventario', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-inv'); b.innerHTML = ''; d.forEach(i => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 font-bold">💊 ${i.medicamento}</td><td class="p-4 font-mono text-slate-500">${i.lote}</td><td class="p-4 font-bold text-blue-500">${i.stock}</td><td class="p-4 text-xs font-bold text-slate-400">${i.caducidad}</td></tr>`); }
+        async function cargarHistorial() { const res = await fetch('/api/movimientos', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-mov'); b.innerHTML = ''; d.forEach(m => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 text-xs font-bold text-slate-400">${m.fecha}</td><td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${m.tipo==='ENTRADA'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${m.tipo}</span></td><td class="p-4 font-bold">${m.medicamento} <span class="block text-[10px] font-normal text-slate-500 font-mono">${m.lote}</span></td><td class="p-4 font-bold text-center">${m.cantidad}</td><td class="p-4 text-xs italic text-slate-400 font-bold">📍 ${m.destino_origen}</td></tr>`); }
+        async function cargarFinanzas() { const res = await fetch('/api/finanzas', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-fin'); b.innerHTML = ''; d.forEach(f => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 text-[10px] text-slate-400 font-bold">${f.fecha}</td><td class="p-4 font-bold text-[10px] ${f.tipo==='INGRESO'?'text-green-500':'text-red-500'}">${f.tipo}</td><td class="p-4 font-bold text-slate-700 dark:text-slate-300 text-xs">${f.concepto}</td><td class="p-4 font-bold text-right text-xs">$${f.monto.toFixed(2)}</td></tr>`); }
+        async function cargarUsuarios() { const res = await fetch('/api/usuarios', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-usr'); b.innerHTML = ''; d.forEach(u => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-xs">${u.username}</td><td class="p-3"><span class="px-3 py-1 rounded-full text-[10px] bg-blue-100 text-blue-700 font-bold uppercase">${u.rol}</span></td><td class="p-3 text-right">${(rLog==='ADMIN'&&u.username!=='admin'&&u.username!==uLog)?`<button onclick="delUsr('${u.username}')" class="text-red-500 font-bold text-[10px]">ELIMINAR</button>`:''}</td></tr>`); }
+        async function cargarProveedores() { const res = await fetch('/api/proveedores', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-prov'); const sel = document.getElementById('o_p'); b.innerHTML = ''; sel.innerHTML = '<option value="">Proveedor...</option>'; d.forEach(p => { b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-sm">🏢 ${p.nombre}</td><td class="p-3 text-slate-500 italic text-xs">👤 ${p.contacto}</td></tr>`; sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`; }); }
+
+        async function crearOC() { const b = { proveedor_id: parseInt(document.getElementById('o_p').value), medicamento: document.getElementById('o_m').value, cantidad: parseInt(document.getElementById('o_c').value), costo_total: parseFloat(document.getElementById('o_t').value) }; await fetch('/api/compras', { method: 'POST', headers: getHeaders(), body: JSON.stringify(b) }); ['o_m','o_c','o_t'].forEach(id => document.getElementById(id).value = ''); }
+        async function cargarCompras() { const res = await fetch('/api/compras', { headers: getHeaders() }); if(!res.ok) return; const d = await res.json(); const b = document.getElementById('b-com'); b.innerHTML = ''; d.forEach(o => { let pill = o.estado==='PENDIENTE' ? `<button onclick="abrirModalRecibir(${o.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow text-xs font-bold transition">RECIBIR</button>` : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold font-mono tracking-tighter">COMPLETA</span>`; b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 text-[10px] font-bold text-slate-400">${o.fecha} <br> <b>OC#${o.id}</b></td><td class="p-3 font-bold text-xs">${o.proveedor}</td><td class="p-3 font-bold text-blue-600 text-xs">${o.medicamento} <span class="text-[10px] font-normal text-slate-500 block">x${o.cantidad} Und.</span></td><td class="p-3 font-bold text-xs">$${o.costo_total.toFixed(2)}</td><td class="p-3 text-center">${pill}</td></tr>`; }); }
+
+        function abrirModalRecibir(id) { ordenPendiente = id; document.getElementById('mod-rec').classList.remove('hidden'); }
+        async function confirmarRec() { const b = { numero_lote: document.getElementById('r_lot').value, fecha_caducidad: document.getElementById('r_cad').value }; if(!b.numero_lote || !b.fecha_caducidad) return showToast("Faltan datos", "error"); const res = await fetch(`/api/compras/${ordenPendiente}/recibir`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(b) }); if(res.ok) { showToast("Ingresado a Stock"); document.getElementById('mod-rec').classList.add('hidden'); ['r_lot','r_cad'].forEach(id=>document.getElementById(id).value=''); } }
+
+        async function regE() { await fetch('/api/entradas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ nombre_medicamento: document.getElementById('e_n').value, numero_lote: document.getElementById('e_l').value, cantidad: parseInt(document.getElementById('e_c').value), fecha_caducidad: document.getElementById('e_d').value, zona: "General", origen: document.getElementById('e_p').value }) }); ['e_n','e_l','e_c','e_d','e_p'].forEach(id => document.getElementById(id).value = ''); }
+        async function regS() { const res = await fetch('/api/salidas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ nombre_medicamento: document.getElementById('s_n').value, cantidad_requerida: parseInt(document.getElementById('s_c').value), destino: document.getElementById('s_o').value }) }); if(!res.ok) showToast("Error de Stock", "error"); ['s_n','s_c','s_o'].forEach(id => document.getElementById(id).value = ''); }
+        async function regFin() { await fetch('/api/finanzas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ tipo: document.getElementById('f_t').value, monto: parseFloat(document.getElementById('f_m').value), concepto: document.getElementById('f_c').value }) }); document.getElementById('f_m').value=''; document.getElementById('f_c').value=''; }
+        async function delUsr(u) { if(confirm(`¿Eliminar a ${u}?`)) await fetch(`/api/usuarios/${u}`, { method: 'DELETE', headers: getHeaders() }); }
+        async function crearUsr() { await fetch('/api/usuarios', { method: 'POST', headers: getHeaders(), body: JSON.stringify({username: document.getElementById('u_nom').value, password: document.getElementById('u_pas').value, rol: document.getElementById('u_rol').value}) }); document.getElementById('u_nom').value=''; document.getElementById('u_pas').value=''; }
+        async function crearProv() { await fetch('/api/proveedores', { method: 'POST', headers: getHeaders(), body: JSON.stringify({nombre: document.getElementById('p_nom').value, contacto: document.getElementById('p_con').value}) }); document.getElementById('p_nom').value=''; document.getElementById('p_con').value=''; }
+        function expPDF(id, t) { const { jsPDF } = window.jspdf; const doc = new jsPDF(), f = new Date().toISOString().split('T')[0]; doc.text(`Fénix ERP - ${t} - ${f}`, 14, 15); doc.autoTable({ html: `#${id}`, startY: 20, theme:'grid', headStyles: {fillColor: [30, 58, 138]} }); doc.save(`Fenix_${t}_${f}.pdf`); }
+    </script>
+</body>
+</html>
