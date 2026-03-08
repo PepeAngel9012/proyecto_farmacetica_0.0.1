@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
