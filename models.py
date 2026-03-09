@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -7,7 +7,7 @@ class Usuario(Base):
     __tablename__ = "usuarios"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    password = Column(String) 
+    password = Column(String)
     rol = Column(String)
 
 class Proveedor(Base):
@@ -40,7 +40,15 @@ class Catalogo(Base):
     __tablename__ = "catalogo"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True)
+    # Slotting — zona física en bodega, se actualiza automáticamente por ABC
     zona_almacenaje = Column(String, default="General")
+    # BPA — condiciones de almacenamiento
+    temp_min = Column(Float, default=15.0)
+    temp_max = Column(Float, default=25.0)
+    requiere_refrigeracion = Column(Boolean, default=False)
+    controlado = Column(Boolean, default=False)  # Psicotrópicos / estupefacientes
+    # ABC — clasificación por rotación (A/B/C), se recalcula dinámicamente
+    clasificacion_abc = Column(String, default="C")
     lotes = relationship("Lote", back_populates="medicamento")
 
 class Lote(Base):
