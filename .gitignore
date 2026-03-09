@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+nexus_pgdata/
+logs_nexus.txt
+.vscode/

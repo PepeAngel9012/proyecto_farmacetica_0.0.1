@@ -2,12 +2,18 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:admin123@localhost:5432/fenix_erp")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://nexus_admin:nexus_password123@localhost:5432/nexus_db"
+)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try: 
+        yield db
+    finally: 
+        db.close()

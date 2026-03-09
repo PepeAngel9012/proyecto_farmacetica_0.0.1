@@ -1,7 +1,7 @@
 [project]
-name = "proyecto-farmacetica-0-0-1"
+name = "nexus-erp"
 version = "0.1.0"
-description = "Add your description here"
+description = "Nexus ERP - Sistema de Gestión Médica e Inteligencia de Negocios"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -12,4 +12,6 @@ dependencies = [
     "sqlalchemy>=2.0.47",
     "uvicorn>=0.41.0",
     "websockets>=16.0",
+    "passlib[bcrypt]>=1.7.4",
+    "bcrypt==4.0.1",
 ]

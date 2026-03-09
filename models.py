@@ -24,7 +24,7 @@ class OrdenCompra(Base):
     medicamento = Column(String)
     cantidad = Column(Integer)
     costo_total = Column(Float)
-    estado = Column(String, default="PENDIENTE") # PENDIENTE o COMPLETADA
+    estado = Column(String, default="PENDIENTE")
     fecha_orden = Column(DateTime, default=datetime.utcnow)
     proveedor = relationship("Proveedor", back_populates="ordenes")
 

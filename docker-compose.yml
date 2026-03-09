@@ -1,27 +1,27 @@
 services:
-  api:
+  nexus_web:
     build: .
+    container_name: nexus_web
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     environment:
-      - DATABASE_URL=postgresql://admin:admin123@db:5432/fenix_erp
+      
+      - DATABASE_URL=postgresql://nexus_admin:nexus_password123@nexus_db:5432/nexus_db
     depends_on:
-      - db
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - nexus_db
+    restart: always
 
-  db:
-    image: postgres:18-alpine
+  nexus_db:
+    image: postgres:15-alpine
+    container_name: nexus_db
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin123
-      - POSTGRES_DB=fenix_erp
+      - POSTGRES_USER=nexus_admin
+      - POSTGRES_PASSWORD=nexus_password123
+      - POSTGRES_DB=nexus_db
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - nexus_pgdata:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
-    
+  nexus_pgdata:
