@@ -2,685 +2,890 @@
 <html lang="es" class="light">
 <head>
     <meta charset="UTF-8">
-    <title>Nexus ERP - Inteligencia Médica</title>
+    <title>Nexus ERP - CEDIS Farmacéutico</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-        .dark ::-webkit-scrollbar-thumb { background: #1e40af; }
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-thumb{background:#3b82f6;border-radius:10px}
+        .dark ::-webkit-scrollbar-thumb{background:#1e40af}
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex h-screen overflow-hidden transition-colors duration-300 font-sans">
 
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+<div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Modal Recepción -->
-    <div id="mod-rec" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-96 border-t-4 border-blue-500 text-slate-900 dark:text-white">
-            <h3 class="text-xl font-bold mb-4">Recepción Nexus</h3>
-            <input type="text" id="r_lot" placeholder="Lote del producto" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-            <input type="date" id="r_cad" class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+<!-- ===================== MODALES ===================== -->
+
+<!-- Modal Recepción OC -->
+<div id="mod-rec" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-96 border-t-4 border-blue-500 text-slate-900 dark:text-white">
+        <h3 class="text-xl font-bold mb-4">Recepción Nexus</h3>
+        <input type="text" id="r_lot" placeholder="Lote del producto" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <input type="date" id="r_cad" class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('mod-rec').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cerrar</button>
+            <button onclick="confirmarRec()" class="flex-1 p-2 bg-blue-600 text-white rounded font-bold">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal BPA -->
+<div id="mod-bpa" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-[420px] border-t-4 border-purple-500 text-slate-900 dark:text-white">
+        <h3 class="text-lg font-bold mb-1">⚙️ Condiciones BPA</h3>
+        <p id="bpa-nombre" class="text-xs text-slate-400 font-mono mb-4"></p>
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temp. mínima (°C)</label>
+        <input type="number" step="0.1" id="bpa_tmin" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temp. máxima (°C)</label>
+        <input type="number" step="0.1" id="bpa_tmax" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Zona de almacenaje</label>
+        <select id="bpa_zona" class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+            <option value="Zona-A (Acceso Inmediato)">Zona-A — Acceso Inmediato</option>
+            <option value="Zona-B (Media Rotación)">Zona-B — Media Rotación</option>
+            <option value="Zona-C (Baja Rotación)">Zona-C — Baja Rotación</option>
+            <option value="Refrigeración">Refrigeración</option>
+            <option value="Controlados">Controlados (Seguridad)</option>
+            <option value="General">General</option>
+        </select>
+        <div class="flex gap-6 mb-6">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="bpa_ref" class="w-4 h-4 accent-blue-500"><span class="text-sm font-bold">❄️ Refrigeración</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="bpa_ctrl" class="w-4 h-4 accent-red-500"><span class="text-sm font-bold">⚠️ Controlado</span></label>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('mod-bpa').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cancelar</button>
+            <button onclick="guardarBPA()" class="flex-1 p-2 bg-purple-600 text-white rounded font-bold">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Pedido -->
+<div id="mod-pedido" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl w-[500px] border-t-4 border-cyan-500 text-slate-900 dark:text-white max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-bold mb-4">🛒 Nuevo Pedido</h3>
+        <div id="pedido-farmacia-wrap" class="">
+            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Farmacia</label>
+            <select id="ped_farm" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none"></select>
+        </div>
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Fecha entrega estimada</label>
+        <input type="date" id="ped_fecha" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Notas</label>
+        <input type="text" id="ped_notas" placeholder="Opcional..." class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <div class="border-t dark:border-slate-700 pt-4">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Items del pedido</p>
+            <div id="items-pedido" class="space-y-2 mb-3"></div>
             <div class="flex gap-2">
-                <button onclick="document.getElementById('mod-rec').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cerrar</button>
-                <button onclick="confirmarRec()" class="flex-1 p-2 bg-blue-600 text-white rounded font-bold">Confirmar</button>
+                <input type="text" id="item_med" placeholder="Medicamento" class="flex-1 p-2 border rounded dark:bg-slate-700 outline-none text-sm">
+                <input type="number" id="item_cant" placeholder="Cant." class="w-24 p-2 border rounded dark:bg-slate-700 outline-none text-sm">
+                <button onclick="agregarItem()" class="bg-cyan-600 text-white px-3 py-2 rounded font-bold text-sm">+</button>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-4">
+            <button onclick="document.getElementById('mod-pedido').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cancelar</button>
+            <button onclick="enviarPedido()" class="flex-1 p-2 bg-cyan-600 text-white rounded font-bold">Enviar Pedido</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Picking -->
+<div id="mod-picking" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl w-96 border-t-4 border-yellow-500 text-slate-900 dark:text-white">
+        <h3 class="text-lg font-bold mb-4">📋 Completar Picking</h3>
+        <p class="text-xs text-slate-400 mb-3">Pedido #<span id="pick-id"></span></p>
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Nombre del almacenista</label>
+        <input type="text" id="pick_alm" placeholder="Almacenista responsable" class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('mod-picking').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cancelar</button>
+            <button onclick="completarPicking()" class="flex-1 p-2 bg-yellow-500 text-white rounded font-bold">Completar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Salida Ruta -->
+<div id="mod-ruta" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl w-96 border-t-4 border-green-500 text-slate-900 dark:text-white">
+        <h3 class="text-lg font-bold mb-4">🚚 Salida a Ruta</h3>
+        <p class="text-xs text-slate-400 mb-3">Pedido #<span id="ruta-id"></span></p>
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Rutero</label>
+        <input type="text" id="ruta_rutero" placeholder="Nombre del rutero" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temperatura de salida (°C) — BPD</label>
+        <input type="number" step="0.1" id="ruta_temp" placeholder="Ej: 8.5" class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('mod-ruta').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cancelar</button>
+            <button onclick="confirmarSalidaRuta()" class="flex-1 p-2 bg-green-600 text-white rounded font-bold">Salir</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Entrega -->
+<div id="mod-entrega" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl w-96 border-t-4 border-teal-500 text-slate-900 dark:text-white">
+        <h3 class="text-lg font-bold mb-4">✅ Confirmar Entrega</h3>
+        <p class="text-xs text-slate-400 mb-3">Pedido #<span id="entrega-id"></span></p>
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temperatura de llegada (°C) — BPD</label>
+        <input type="number" step="0.1" id="entrega_temp" placeholder="Ej: 9.2" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Notas</label>
+        <input type="text" id="entrega_notas" placeholder="Opcional..." class="w-full mb-6 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+        <div class="flex gap-2">
+            <button onclick="rechazarEntrega()" class="flex-1 p-2 bg-red-500 text-white rounded font-bold">Rechazar</button>
+            <button onclick="confirmarEntrega()" class="flex-1 p-2 bg-teal-600 text-white rounded font-bold">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Login -->
+<div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
+    <form onsubmit="event.preventDefault(); iniciarSesion();" class="bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-2xl w-80 text-center border-b-8 border-blue-600">
+        <h1 class="text-3xl font-bold mb-2 dark:text-white uppercase tracking-tighter">Nexus ERP</h1>
+        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-8">CEDIS Farmacéutico</p>
+        <input type="text" id="l_u" placeholder="Usuario" required class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
+        <input type="password" id="l_p" placeholder="Contraseña" required class="w-full mb-8 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
+        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition">Entrar</button>
+    </form>
+</div>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-2xl flex-shrink-0">
+    <div class="p-6 border-b border-slate-800 flex justify-between items-center text-white font-black tracking-widest">NEXUS<button onclick="toggleTema()">🌓</button></div>
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-sm">
+        <button onclick="cambiarVista('v-dash')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📊 Dashboard</button>
+
+        <!-- CEDIS / ALMACÉN -->
+        <div id="m-alm" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Almacén</p>
+            <button onclick="cambiarVista('v-alm')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📦 Inventario</button>
+        </div>
+
+        <!-- SCM -->
+        <div id="m-scm" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">SCM</p>
+            <button onclick="cambiarVista('v-com')" class="w-full text-left p-3 rounded-lg text-green-400 font-bold hover:bg-blue-600 hover:text-white">🛒 Compras</button>
+            <button onclick="cambiarVista('v-pro')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏢 Proveedores</button>
+            <button onclick="cambiarVista('v-kar')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🕒 Kárdex</button>
+            <button onclick="cambiarVista('v-abc')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏷️ Análisis ABC</button>
+        </div>
+
+        <!-- CEDIS OPS -->
+        <div id="m-cedis" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Operaciones CEDIS</p>
+            <button onclick="cambiarVista('v-pedidos')" class="w-full text-left p-3 rounded-lg text-cyan-400 font-bold hover:bg-blue-600 hover:text-white">📋 Pedidos</button>
+            <button onclick="cambiarVista('v-farmacias')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏪 Farmacias</button>
+            <button onclick="cambiarVista('v-devoluciones')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🔄 Devoluciones</button>
+        </div>
+
+        <!-- QFR -->
+        <div id="m-qfr" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Control de Calidad</p>
+            <button onclick="cambiarVista('v-cuarentena')" class="w-full text-left p-3 rounded-lg text-orange-400 font-bold hover:bg-blue-600 hover:text-white">🔴 Cuarentena</button>
+        </div>
+
+        <!-- FARMACIA (rol) -->
+        <div id="m-farmacia" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Mi Farmacia</p>
+            <button onclick="cambiarVista('v-pedidos')" class="w-full text-left p-3 rounded-lg text-cyan-400 font-bold hover:bg-blue-600 hover:text-white">📋 Mis Pedidos</button>
+            <button onclick="cambiarVista('v-devoluciones')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🔄 Devoluciones</button>
+        </div>
+
+        <!-- RUTERO -->
+        <div id="m-rutero" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Mis Rutas</p>
+            <button onclick="cambiarVista('v-pedidos')" class="w-full text-left p-3 rounded-lg text-green-400 font-bold hover:bg-blue-600 hover:text-white">🚚 Mis Entregas</button>
+        </div>
+
+        <!-- ADMIN -->
+        <div id="m-adm" class="hidden space-y-1 pt-2 border-t border-slate-800">
+            <p class="text-[9px] text-slate-600 font-bold uppercase px-3 pt-1">Administración</p>
+            <button onclick="cambiarVista('v-fin')" class="w-full text-left p-3 rounded-lg text-yellow-500 font-bold hover:bg-blue-600 hover:text-white">💰 Finanzas</button>
+            <button onclick="cambiarVista('v-usr')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">👥 Usuarios</button>
+        </div>
+    </nav>
+    <div class="p-4 bg-black/20 text-center">
+        <p id="lbl-u" class="text-white font-bold uppercase text-sm"></p>
+        <p id="lbl-r" class="text-[10px] text-blue-400 mb-1"></p>
+        <p id="lbl-farm" class="text-[9px] text-cyan-400 mb-2"></p>
+        <button onclick="cerrarSesion()" class="text-xs hover:text-red-400 underline">Cerrar Sesión</button>
+    </div>
+</aside>
+
+<!-- ===================== MAIN ===================== -->
+<main class="flex-1 p-8 overflow-y-auto relative bg-slate-50 dark:bg-slate-900">
+<div id="live" class="hidden absolute top-6 right-8 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold animate-pulse tracking-widest">EN VIVO</div>
+
+<!-- DASHBOARD -->
+<div id="v-dash" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold dark:text-white">Nexus Intelligence</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-blue-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">Lotes Activos</p>
+            <p id="d-lot" class="text-3xl font-bold mt-2">0</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-orange-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">En Riesgo (30d)</p>
+            <p id="d-rie" class="text-3xl font-bold mt-2 text-orange-500">0</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-cyan-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">Pedidos Activos</p>
+            <p id="d-ped" class="text-3xl font-bold mt-2 text-cyan-500">0</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-green-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">En Ruta</p>
+            <p id="d-ruta" class="text-3xl font-bold mt-2 text-green-500">0</p>
+        </div>
+        <div id="card-utilidad" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-indigo-600">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">Utilidad Neta</p>
+            <p id="d-uti" class="text-3xl font-bold mt-2">$0</p>
+        </div>
+        <div id="card-cuarentena" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-red-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">En Cuarentena</p>
+            <p id="d-cuar" class="text-3xl font-bold mt-2 text-red-500">0</p>
+        </div>
+        <div id="card-abc" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-purple-500">
+            <p class="text-[10px] text-slate-500 font-bold uppercase">ABC</p>
+            <div class="flex justify-around mt-2">
+                <div><p class="text-[10px] font-bold text-green-600">A</p><p id="abc-a" class="text-lg font-black">0</p></div>
+                <div><p class="text-[10px] font-bold text-yellow-500">B</p><p id="abc-b" class="text-lg font-black">0</p></div>
+                <div><p class="text-[10px] font-bold text-slate-400">C</p><p id="abc-c" class="text-lg font-black">0</p></div>
             </div>
         </div>
     </div>
 
-    <!-- Login -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-50">
-        <form onsubmit="event.preventDefault(); iniciarSesion();" class="bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-2xl w-80 text-center border-b-8 border-blue-600">
-            <h1 class="text-3xl font-bold mb-8 dark:text-white uppercase tracking-tighter">Nexus ERP</h1>
-            <input type="text" id="l_u" placeholder="Usuario" required class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
-            <input type="password" id="l_p" placeholder="Contraseña" required class="w-full mb-8 p-3 border rounded-lg dark:bg-slate-700 outline-none text-slate-900 dark:text-white">
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg hover:scale-105 transition">Entrar</button>
-        </form>
+    <div id="panel-alertas" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 p-5 rounded-2xl">
+        <h3 class="text-red-700 font-bold text-sm mb-3">⚠️ ALERTAS DE REABASTECIMIENTO</h3>
+        <div id="lista-alertas" class="grid grid-cols-3 gap-3"></div>
+    </div>
+    <div id="panel-bpa" class="hidden bg-orange-50 dark:bg-orange-900/20 border border-orange-300 p-5 rounded-2xl">
+        <h3 class="text-orange-700 font-bold text-sm mb-3">🧪 ALERTAS BPA — CADUCIDAD</h3>
+        <div id="lista-bpa" class="grid grid-cols-3 gap-3"></div>
     </div>
 
-    <!-- Modal BPA / Condiciones de almacenamiento -->
-    <div id="mod-bpa" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100]">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-[420px] border-t-4 border-purple-500 text-slate-900 dark:text-white">
-            <h3 class="text-lg font-bold mb-1">⚙️ Condiciones BPA</h3>
-            <p id="bpa-nombre" class="text-xs text-slate-400 font-mono mb-5"></p>
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temperatura mínima (°C)</label>
-            <input type="number" step="0.1" id="bpa_tmin" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Temperatura máxima (°C)</label>
-            <input type="number" step="0.1" id="bpa_tmax" class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Zona de almacenaje</label>
-            <select id="bpa_zona" class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                <option value="Zona-A (Acceso Inmediato)">Zona-A — Acceso Inmediato</option>
-                <option value="Zona-B (Media Rotación)">Zona-B — Media Rotación</option>
-                <option value="Zona-C (Baja Rotación)">Zona-C — Baja Rotación</option>
-                <option value="Refrigeración">Refrigeración</option>
-                <option value="Controlados">Controlados (Seguridad)</option>
-                <option value="General">General</option>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+            <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">Balance Inventario</h3>
+            <canvas id="gInv"></canvas>
+        </div>
+        <div class="space-y-4">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow">
+                <h3 class="font-bold mb-3 text-xs uppercase text-slate-500">🏆 Top Productos</h3>
+                <div id="lista-top" class="space-y-2"></div>
+            </div>
+            <div id="b-gFin" class="hidden bg-white dark:bg-slate-800 p-5 rounded-2xl shadow"><canvas id="gFin"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- INVENTARIO -->
+<div id="v-alm" class="hidden space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold dark:text-white">Almacén</h2>
+        <button onclick="expPDF('t-inv','Inventario_Nexus')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">📄 PDF</button>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="space-y-4">
+            <form onsubmit="event.preventDefault(); regE();" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-t-4 border-green-500">
+                <h3 class="font-bold mb-3 uppercase text-[10px] text-slate-500">Entrada Manual</h3>
+                <input type="text" id="e_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <input type="text" id="e_l" placeholder="Lote" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none font-mono">
+                <input type="number" id="e_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <input type="date" id="e_d" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <input type="text" id="e_p" placeholder="Origen" required class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Ingresar</button>
+            </form>
+            <form onsubmit="event.preventDefault(); regS();" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-t-4 border-orange-500">
+                <h3 class="font-bold mb-3 uppercase text-[10px] text-slate-500">Salida FEFO ✅</h3>
+                <input type="text" id="s_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <input type="number" id="s_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <input type="text" id="s_o" placeholder="Destino" required class="w-full mb-3 p-3 border rounded-lg dark:bg-slate-700 outline-none">
+                <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-lg font-bold">Surtir</button>
+            </form>
+        </div>
+        <div class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden flex flex-col">
+            <div class="p-4 border-b dark:border-slate-700">
+                <input type="text" id="f-inv" onkeyup="fil('t-inv','f-inv')" placeholder="🔍 Filtrar..." class="w-full p-2 border rounded-lg dark:bg-slate-700 outline-none">
+            </div>
+            <div class="overflow-y-auto flex-1">
+                <table id="t-inv" class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 font-bold uppercase text-[10px] text-slate-500">
+                        <tr><th class="p-3">Medicamento</th><th class="p-3">Lote</th><th class="p-3">Stock</th><th class="p-3">Vence</th><th class="p-3">BPA</th><th class="p-3">ABC</th><th class="p-3">Zona</th></tr>
+                    </thead>
+                    <tbody id="b-inv" class="divide-y dark:divide-slate-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PEDIDOS -->
+<div id="v-pedidos" class="hidden space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold dark:text-white">📋 Pedidos de Farmacia</h2>
+        <button onclick="abrirModalPedido()" class="bg-cyan-600 text-white px-5 py-2 rounded-lg font-bold">+ Nuevo Pedido</button>
+    </div>
+    <div class="flex gap-3 flex-wrap" id="filtros-pedido">
+        <button onclick="filtrarPedidos('TODOS')" class="px-4 py-1 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-700">Todos</button>
+        <button onclick="filtrarPedidos('PENDIENTE')" class="px-4 py-1 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-700">Pendientes</button>
+        <button onclick="filtrarPedidos('EN_PICKING')" class="px-4 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">En Picking</button>
+        <button onclick="filtrarPedidos('LISTO')" class="px-4 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Listos</button>
+        <button onclick="filtrarPedidos('EN_RUTA')" class="px-4 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">En Ruta</button>
+        <button onclick="filtrarPedidos('ENTREGADO')" class="px-4 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-700">Entregados</button>
+    </div>
+    <div id="lista-pedidos" class="space-y-4"></div>
+</div>
+
+<!-- FARMACIAS -->
+<div id="v-farmacias" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">🏪 Farmacias Clientes</h2>
+    <form onsubmit="event.preventDefault(); crearFarmacia();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-cyan-500">
+        <input type="text" id="farm_nom" placeholder="Nombre farmacia" required class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <input type="text" id="farm_dir" placeholder="Dirección" required class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <input type="text" id="farm_con" placeholder="Contacto" required class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <button type="submit" class="bg-cyan-600 text-white px-6 py-2 rounded font-bold">Registrar</button>
+    </form>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500">
+                <tr><th class="p-3">Farmacia</th><th class="p-3">Dirección</th><th class="p-3">Contacto</th><th class="p-3 text-center">Estado</th></tr>
+            </thead>
+            <tbody id="b-farmacias" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DEVOLUCIONES -->
+<div id="v-devoluciones" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">🔄 Devoluciones</h2>
+    <form onsubmit="event.preventDefault(); crearDevolucion();" class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border-l-8 border-pink-500 grid grid-cols-2 gap-3">
+        <div id="dev-farm-wrap"><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Farmacia</label><select id="dev_farm" class="w-full p-2 border rounded dark:bg-slate-700"></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Medicamento</label><input type="text" id="dev_med" required class="w-full p-2 border rounded dark:bg-slate-700"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Lote</label><input type="text" id="dev_lot" required class="w-full p-2 border rounded dark:bg-slate-700 font-mono"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Cantidad</label><input type="number" id="dev_cant" required class="w-full p-2 border rounded dark:bg-slate-700"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Motivo</label>
+            <select id="dev_mot" class="w-full p-2 border rounded dark:bg-slate-700">
+                <option value="PROXIMO_VENCER">Próximo a vencer</option>
+                <option value="ERROR_PEDIDO">Error en pedido</option>
+                <option value="PRODUCTO_DANADO">Producto dañado</option>
+                <option value="OTRO">Otro</option>
             </select>
-            <div class="flex gap-6 mb-6">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="bpa_ref" class="w-4 h-4 accent-blue-500">
-                    <span class="text-sm font-bold">❄️ Requiere refrigeración</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" id="bpa_ctrl" class="w-4 h-4 accent-red-500">
-                    <span class="text-sm font-bold">⚠️ Producto controlado</span>
-                </label>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="document.getElementById('mod-bpa').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 dark:bg-slate-700 rounded font-bold dark:text-white">Cancelar</button>
-                <button onclick="guardarBPA()" class="flex-1 p-2 bg-purple-600 text-white rounded font-bold">Guardar</button>
-            </div>
         </div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Destino</label>
+            <select id="dev_dest" class="w-full p-2 border rounded dark:bg-slate-700">
+                <option value="CUARENTENA">Cuarentena (revisar QFR)</option>
+                <option value="RESTOCK">Restock directo</option>
+                <option value="DESTRUCCION">Destrucción</option>
+            </select>
+        </div>
+        <div class="col-span-2"><button type="submit" class="w-full bg-pink-600 text-white py-2 rounded font-bold">Registrar Devolución</button></div>
+    </form>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500">
+                <tr><th class="p-3">Fecha</th><th class="p-3">Farmacia</th><th class="p-3">Medicamento</th><th class="p-3">Lote</th><th class="p-3 text-center">Cant.</th><th class="p-3">Motivo</th><th class="p-3">Destino</th><th class="p-3 text-center">Estado</th><th class="p-3" id="col-resolver"></th></tr>
+            </thead>
+            <tbody id="b-devoluciones" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
     </div>
+</div>
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-2xl">
-        <div class="p-6 border-b border-slate-800 flex justify-between items-center text-white font-black tracking-widest">NEXUS<button onclick="toggleTema()">🌓</button></div>
-        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-            <button onclick="cambiarVista('v-dash')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📊 Dashboard</button>
-            <button onclick="cambiarVista('v-alm')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📦 Almacén</button>
-            <div id="m-scm" class="hidden pt-4 border-t border-slate-800 space-y-1">
-                <button onclick="cambiarVista('v-com')" class="w-full text-left p-3 rounded-lg text-green-400 font-bold hover:bg-blue-600 hover:text-white">🛒 Compras</button>
-                <button onclick="cambiarVista('v-pro')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏢 Proveedores</button>
-                <button onclick="cambiarVista('v-kar')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🕒 Kárdex</button>
-                <button onclick="cambiarVista('v-abc')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">🏷️ Análisis ABC</button>
-            </div>
-            <div id="m-adm" class="hidden pt-4 border-t border-slate-800 space-y-1">
-                <button onclick="cambiarVista('v-fin')" class="w-full text-left p-3 rounded-lg text-yellow-500 font-bold hover:bg-blue-600 hover:text-white">💰 Finanzas</button>
-                <button onclick="cambiarVista('v-usr')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white">👥 Usuarios</button>
-            </div>
-        </nav>
-        <div class="p-4 bg-black/20 text-center">
-            <p id="lbl-u" class="text-white font-bold uppercase text-sm"></p>
-            <p id="lbl-r" class="text-[10px] text-blue-400 mb-2"></p>
-            <button onclick="cerrarSesion()" class="text-xs hover:text-red-400 underline">Cerrar Sesión</button>
+<!-- CUARENTENA (QFR) -->
+<div id="v-cuarentena" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">🔴 Zona de Cuarentena</h2>
+    <form onsubmit="event.preventDefault(); crearCuarentena();" class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border-l-8 border-red-600 flex gap-3 items-end flex-wrap">
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Medicamento</label><input type="text" id="cuar_med" required class="p-2 border rounded dark:bg-slate-700"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Lote</label><input type="text" id="cuar_lot" required class="p-2 border rounded dark:bg-slate-700 font-mono"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Cantidad</label><input type="number" id="cuar_cant" required class="p-2 border rounded dark:bg-slate-700 w-24"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Motivo</label>
+            <select id="cuar_mot" class="p-2 border rounded dark:bg-slate-700">
+                <option value="RECEPCION_PENDIENTE">Recepción pendiente</option>
+                <option value="DEVOLUCION">Devolución</option>
+                <option value="SOSPECHA_CALIDAD">Sospecha de calidad</option>
+                <option value="VENCIDO">Vencido</option>
+            </select>
         </div>
-    </aside>
+        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded font-bold">Ingresar</button>
+    </form>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500">
+                <tr><th class="p-3">Fecha</th><th class="p-3">Medicamento</th><th class="p-3">Lote</th><th class="p-3 text-center">Cant.</th><th class="p-3">Motivo</th><th class="p-3 text-center">Estado</th><th class="p-3">Resuelto por</th><th class="p-3 text-center">Acciones</th></tr>
+            </thead>
+            <tbody id="b-cuarentena" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
 
-    <!-- Main -->
-    <main class="flex-1 p-8 overflow-y-auto relative bg-slate-50 dark:bg-slate-900">
-        <div id="live" class="hidden absolute top-6 right-8 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold animate-pulse tracking-widest">EN VIVO</div>
+<!-- COMPRAS -->
+<div id="v-com" class="hidden space-y-6">
+    <h2 class="text-3xl font-bold dark:text-white">Órdenes de Compra</h2>
+    <form onsubmit="event.preventDefault(); crearOC();" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-8 border-teal-500 flex gap-3 items-end flex-wrap">
+        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Proveedor</label><select id="o_p" class="p-2 border rounded-lg dark:bg-slate-700 min-w-[150px]"></select></div>
+        <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Producto</label><input type="text" id="o_m" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Cant.</label><input type="number" id="o_c" required class="p-2 border rounded-lg dark:bg-slate-700 w-24"></div>
+        <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Costo $</label><input type="number" step="0.01" id="o_t" required class="p-2 border rounded-lg dark:bg-slate-700 w-32"></div>
+        <button type="submit" class="bg-teal-600 text-white px-6 py-2 rounded-lg font-bold">Generar OC</button>
+    </form>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden">
+        <table id="t-com" class="w-full text-left text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500">
+                <tr><th class="p-4">Fecha</th><th class="p-4">Proveedor</th><th class="p-4">Producto</th><th class="p-4">Total</th><th class="p-4 text-center">Estado</th></tr>
+            </thead>
+            <tbody id="b-com" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
 
-        <!-- DASHBOARD -->
-        <div id="v-dash" class="hidden space-y-6">
-            <h2 class="text-3xl font-bold dark:text-white">Nexus Intelligence</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-blue-500">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Lotes Activos</p>
-                    <p id="d-lot" class="text-3xl font-bold mt-2">0</p>
-                </div>
-                <div id="card-utilidad" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-indigo-600">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Utilidad Neta</p>
-                    <p id="d-uti" class="text-3xl font-bold mt-2">$0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-orange-500">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">En Riesgo (30d)</p>
-                    <p id="d-rie" class="text-3xl font-bold mt-2 text-orange-500">0</p>
-                </div>
-                <!-- ABC resumen -->
-                <div id="card-abc" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-4 border-purple-500">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Clasificación ABC</p>
-                    <div class="flex justify-around mt-3">
-                        <div><p class="text-xs font-bold text-green-600">A</p><p id="abc-a" class="text-xl font-black">0</p></div>
-                        <div><p class="text-xs font-bold text-yellow-500">B</p><p id="abc-b" class="text-xl font-black">0</p></div>
-                        <div><p class="text-xs font-bold text-slate-400">C</p><p id="abc-c" class="text-xl font-black">0</p></div>
-                    </div>
-                </div>
+<!-- FINANZAS -->
+<div id="v-fin" class="hidden space-y-6">
+    <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold text-yellow-500">Finanzas</h2>
+        <button onclick="expPDF('t-fin','Finanzas_Nexus')" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">📄 PDF</button>
+    </div>
+    <form onsubmit="event.preventDefault(); regFin();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-yellow-500">
+        <select id="f_t" class="p-2 border rounded dark:bg-slate-700"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select>
+        <input type="number" step="0.01" id="f_m" placeholder="Monto" class="p-2 border rounded dark:bg-slate-700">
+        <input type="text" id="f_c" placeholder="Concepto" class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded font-bold">Guardar</button>
+    </form>
+    <div class="bg-white dark:bg-slate-800 rounded h-[450px] overflow-y-auto">
+        <table id="t-fin" class="w-full text-sm">
+            <thead><tr class="bg-slate-50 dark:bg-slate-950 font-bold text-slate-500 uppercase text-[10px]"><th class="p-3">Fecha</th><th class="p-3">Tipo</th><th class="p-3">Concepto</th><th class="p-3 text-right">Monto</th></tr></thead>
+            <tbody id="b-fin" class="divide-y"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- KÁRDEX -->
+<div id="v-kar" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">Kárdex de Auditoría</h2>
+    <div class="bg-white dark:bg-slate-800 rounded shadow h-[600px] overflow-y-auto">
+        <table id="t-mov" class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 text-slate-500 font-bold uppercase text-[10px]">
+                <tr><th class="p-4">Fecha</th><th class="p-4">Op.</th><th class="p-4">Ítem / Lote</th><th class="p-4 text-center">Cant.</th><th class="p-4">Detalle</th></tr>
+            </thead>
+            <tbody id="b-mov" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ABC -->
+<div id="v-abc" class="hidden space-y-6">
+    <h2 class="text-2xl font-bold dark:text-white">🏷️ Análisis ABC + BPA + Slotting</h2>
+    <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-300 p-4 rounded-xl"><p class="text-xs font-bold text-green-700 uppercase mb-1">Clase A — Alta Rotación</p><p class="text-[10px] text-slate-500">80% de salidas. Control estricto.</p></div>
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 p-4 rounded-xl"><p class="text-xs font-bold text-yellow-700 uppercase mb-1">Clase B — Media</p><p class="text-[10px] text-slate-500">80%–95% acumulado.</p></div>
+        <div class="bg-slate-100 dark:bg-slate-800 border border-slate-300 p-4 rounded-xl"><p class="text-xs font-bold text-slate-500 uppercase mb-1">Clase C — Baja</p><p class="text-[10px] text-slate-500">Restante 5%.</p></div>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500 sticky top-0">
+                <tr><th class="p-3">Medicamento</th><th class="p-3 text-center">Clase</th><th class="p-3 text-center">Salidas</th><th class="p-3">Zona</th><th class="p-3 text-center">Temp.</th><th class="p-3 text-center">❄️</th><th class="p-3 text-center">⚠️</th><th class="p-3 text-center">Editar</th></tr>
+            </thead>
+            <tbody id="b-abc" class="divide-y dark:divide-slate-700"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- USUARIOS -->
+<div id="v-usr" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">Usuarios</h2>
+    <form onsubmit="event.preventDefault(); crearUsr();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end flex-wrap">
+        <input type="text" id="u_nom" placeholder="Username" required class="p-2 border rounded dark:bg-slate-700">
+        <input type="password" id="u_pas" placeholder="Password" required class="p-2 border rounded dark:bg-slate-700">
+        <select id="u_rol" class="p-2 border rounded dark:bg-slate-700">
+            <option value="OPERADOR">Operador</option>
+            <option value="SUPERVISOR">Supervisor</option>
+            <option value="QFR">QFR</option>
+            <option value="RUTERO">Rutero</option>
+            <option value="FARMACIA">Farmacia</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+        <select id="u_farm" class="p-2 border rounded dark:bg-slate-700">
+            <option value="">Sin farmacia</option>
+        </select>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Añadir</button>
+    </form>
+    <table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-usr" class="divide-y"></tbody></table>
+</div>
+
+<!-- PROVEEDORES -->
+<div id="v-pro" class="hidden space-y-4">
+    <h2 class="text-2xl font-bold dark:text-white">Proveedores</h2>
+    <form onsubmit="event.preventDefault(); crearProv();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 border-l-8 border-indigo-600">
+        <input type="text" id="p_nom" placeholder="Empresa" required class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <input type="text" id="p_con" placeholder="Contacto" required class="p-2 border rounded flex-1 dark:bg-slate-700">
+        <button type="submit" class="bg-indigo-600 text-white px-8 py-2 rounded font-bold">Registrar</button>
+    </form>
+    <table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-prov" class="divide-y"></tbody></table>
+</div>
+
+</main>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+let uLog=null, rLog=null, farmaciaId=null, ws=null, cInv=null, cFin=null;
+let ordenPendiente=null, catalogoEditando=null, pedidoActivo=null;
+let itemsPedido=[], todosPedidos=[];
+
+function getH(){ return {'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('token')}`}; }
+function fmt(n){ return '$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function showToast(m,t='success'){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className=`px-5 py-3 rounded-lg text-white font-bold shadow-2xl ${t==='success'?'bg-green-600':'bg-red-600'}`; e.innerText=m; c.appendChild(e); setTimeout(()=>e.remove(),3000); }
+function toggleTema(){ document.documentElement.classList.toggle('dark'); }
+function cerrarSesion(){ localStorage.removeItem('token'); location.reload(); }
+function fil(t,i){ const b=document.getElementById(i).value.toLowerCase(),f=document.getElementById(t).getElementsByTagName('tr'); for(let j=1;j<f.length;j++) f[j].style.display=f[j].innerText.toLowerCase().includes(b)?'':'none'; }
+function expPDF(id,t){ const {jsPDF}=window.jspdf,doc=new jsPDF(),f=new Date().toISOString().split('T')[0]; doc.text(`Nexus ERP - ${t} - ${f}`,14,15); doc.autoTable({html:`#${id}`,startY:20,theme:'grid',headStyles:{fillColor:[30,58,138]}}); doc.save(`Nexus_${t}_${f}.pdf`); }
+
+// Badges de estado
+function badgePedido(estado){
+    const m={'PENDIENTE':'bg-slate-200 text-slate-700','EN_PICKING':'bg-yellow-200 text-yellow-800','LISTO':'bg-blue-200 text-blue-800','EN_RUTA':'bg-green-200 text-green-800','ENTREGADO':'bg-teal-200 text-teal-800','CANCELADO':'bg-red-200 text-red-800'};
+    return `<span class="px-2 py-1 rounded-full text-[10px] font-black ${m[estado]||'bg-slate-200'}">${estado}</span>`;
+}
+
+// -----------------------------------------------------------------------
+// WS
+// -----------------------------------------------------------------------
+function conectarWS(){
+    ws=new WebSocket(`ws://${window.location.host}/ws`);
+    ws.onopen=()=>document.getElementById('live').classList.remove('hidden');
+    ws.onmessage=(e)=>{ if(e.data==='update') syncAll(); };
+    ws.onclose=()=>{ document.getElementById('live').classList.add('hidden'); setTimeout(conectarWS,3000); };
+}
+
+function syncAll(){
+    cargarDashboard(); cargarInventario();
+    const esCedis = ['ADMIN','SUPERVISOR','OPERADOR','QFR'].includes(rLog);
+    const esGestion = ['ADMIN','SUPERVISOR'].includes(rLog);
+    if(esCedis){ cargarHistorial(); }
+    if(esGestion){ cargarUsuarios(); cargarProveedores(); cargarCompras(); cargarABC(); cargarFarmacias(); cargarDevoluciones(); }
+    if(['ADMIN','SUPERVISOR','QFR'].includes(rLog)){ cargarCuarentena(); }
+    if(rLog==='ADMIN'){ cargarFinanzas(); }
+    if(['ADMIN','SUPERVISOR','OPERADOR','QFR','FARMACIA','RUTERO'].includes(rLog)){ cargarPedidos(); }
+}
+
+// -----------------------------------------------------------------------
+// LOGIN
+// -----------------------------------------------------------------------
+async function iniciarSesion(){
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('l_u').value,password:document.getElementById('l_p').value})});
+    if(!res.ok){ showToast('Acceso denegado','error'); return; }
+    const d=await res.json();
+    localStorage.setItem('token',d.access_token);
+    uLog=d.username; rLog=d.rol; farmaciaId=d.farmacia_id;
+    document.getElementById('lbl-u').innerText=uLog;
+    document.getElementById('lbl-r').innerText=rLog;
+    document.getElementById('login-screen').classList.add('hidden');
+
+    // Menús por rol
+    const show=(id)=>document.getElementById(id).classList.remove('hidden');
+    if(['ADMIN','SUPERVISOR','OPERADOR','QFR'].includes(rLog)) show('m-alm');
+    if(['ADMIN','SUPERVISOR'].includes(rLog)) show('m-scm');
+    if(['ADMIN','SUPERVISOR','OPERADOR'].includes(rLog)) show('m-cedis');
+    if(['ADMIN','QFR'].includes(rLog)) show('m-qfr');
+    if(rLog==='FARMACIA') show('m-farmacia');
+    if(rLog==='RUTERO') show('m-rutero');
+    if(rLog==='ADMIN'){ show('m-adm'); document.getElementById('card-utilidad').classList.remove('hidden'); document.getElementById('b-gFin').classList.remove('hidden'); document.getElementById('card-abc').classList.remove('hidden'); }
+    if(['ADMIN','SUPERVISOR','QFR'].includes(rLog)) document.getElementById('card-cuarentena').classList.remove('hidden');
+
+    conectarWS(); cambiarVista('v-dash'); showToast(`Bienvenido ${uLog} — ${rLog}`);
+}
+
+function cambiarVista(id){
+    ['v-dash','v-alm','v-kar','v-usr','v-fin','v-pro','v-com','v-abc','v-pedidos','v-farmacias','v-devoluciones','v-cuarentena'].forEach(v=>{ const el=document.getElementById(v); if(el) el.classList.add('hidden'); });
+    document.getElementById(id).classList.remove('hidden');
+    syncAll();
+}
+
+// -----------------------------------------------------------------------
+// DASHBOARD
+// -----------------------------------------------------------------------
+async function cargarDashboard(){
+    const res=await fetch('/api/dashboard',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json();
+    document.getElementById('d-lot').innerText=d.total_lotes;
+    document.getElementById('d-rie').innerText=d.en_riesgo;
+    document.getElementById('d-ped').innerText=d.pedidos_pendientes||0;
+    document.getElementById('d-ruta').innerText=d.en_ruta||0;
+    if(document.getElementById('d-cuar')) document.getElementById('d-cuar').innerText=d.en_cuarentena||0;
+    if(rLog==='ADMIN'){
+        document.getElementById('d-uti').innerText=fmt(d.utilidad);
+        document.getElementById('d-uti').className=d.utilidad>=0?'text-3xl font-bold mt-2 text-indigo-600':'text-3xl font-bold mt-2 text-red-600';
+        if(cFin) cFin.destroy();
+        cFin=new Chart(document.getElementById('gFin'),{type:'bar',data:{labels:['Ingresos','Gastos'],datasets:[{data:[d.ingresos,d.gastos],backgroundColor:['#10b981','#ef4444'],borderRadius:4}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}}}});
+        if(d.abc_resumen){ document.getElementById('abc-a').innerText=d.abc_resumen.A||0; document.getElementById('abc-b').innerText=d.abc_resumen.B||0; document.getElementById('abc-c').innerText=d.abc_resumen.C||0; }
+    }
+    // Alertas stock
+    const pA=document.getElementById('panel-alertas'),lA=document.getElementById('lista-alertas');
+    if(d.alertas_stock&&d.alertas_stock.length>0){ pA.classList.remove('hidden'); lA.innerHTML=''; d.alertas_stock.forEach(a=>{ lA.innerHTML+=`<div class="bg-white dark:bg-slate-800 p-3 rounded-xl border-l-4 border-red-600 flex justify-between items-center"><div><p class="text-[9px] font-bold text-red-500 uppercase">Agotándose</p><p class="font-bold text-xs">${a.medicamento}</p></div><p class="text-xl font-black text-red-600">${a.stock}</p></div>`; }); } else pA.classList.add('hidden');
+    // Alertas BPA
+    const pB=document.getElementById('panel-bpa'),lB=document.getElementById('lista-bpa');
+    if(d.alertas_bpa&&d.alertas_bpa.length>0){ pB.classList.remove('hidden'); lB.innerHTML=''; d.alertas_bpa.forEach(a=>{ const col=a.nivel==='VENCIDO'?'border-red-700 bg-red-100':'a.nivel==="CRITICO"'?'border-orange-600 bg-orange-50':'border-yellow-500 bg-yellow-50'; const badge=a.nivel==='VENCIDO'?'bg-red-600 text-white':a.nivel==='CRITICO'?'bg-orange-500 text-white':'bg-yellow-400 text-slate-900'; lB.innerHTML+=`<div class="p-3 rounded-xl border-l-4 ${col} shadow-sm"><div class="flex justify-between"><div><p class="font-bold text-xs">${a.medicamento}</p><p class="text-[9px] font-mono text-slate-500">${a.lote}</p></div><span class="px-2 py-1 rounded text-[9px] font-black ${badge}">${a.nivel}</span></div><p class="text-[10px] mt-1 font-bold">${a.dias<0?`Venció hace ${Math.abs(a.dias)}d`:`${a.dias}d`}</p></div>`; }); } else pB.classList.add('hidden');
+    // Top
+    const lT=document.getElementById('lista-top'); lT.innerHTML=d.top_productos.length?'':'<p class="text-slate-400 italic text-xs">Sin ventas aún</p>';
+    d.top_productos.forEach((p,idx)=>{ lT.innerHTML+=`<div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-xs"><span class="font-bold">#${idx+1} ${p.nombre}</span><span class="bg-blue-600 text-white px-2 py-1 rounded-full font-bold">${p.ventas}</span></div>`; });
+    if(cInv) cInv.destroy();
+    cInv=new Chart(document.getElementById('gInv'),{type:'doughnut',data:{labels:['Sanos','Riesgo'],datasets:[{data:[d.total_lotes-d.en_riesgo,d.en_riesgo],backgroundColor:['#3b82f6','#f97316'],borderWidth:0}]},options:{cutout:'75%'}});
+}
+
+// -----------------------------------------------------------------------
+// INVENTARIO
+// -----------------------------------------------------------------------
+async function cargarInventario(){
+    const res=await fetch('/api/inventario',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json(); const b=document.getElementById('b-inv'); b.innerHTML='';
+    d.forEach(i=>{ const bc=i.estado_bpa==='VENCIDO'?'bg-red-600 text-white':i.estado_bpa==='CRITICO'?'bg-orange-500 text-white':i.estado_bpa==='ALERTA'?'bg-yellow-400 text-slate-900':'bg-green-100 text-green-700'; const ac=i.abc==='A'?'bg-green-100 text-green-700':i.abc==='B'?'bg-yellow-100 text-yellow-700':'bg-slate-100 text-slate-500'; b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-sm">${i.refrigeracion?'❄️':''} ${i.controlado?'⚠️':''} ${i.medicamento}</td><td class="p-3 font-mono text-slate-500 text-xs">${i.lote}</td><td class="p-3 font-bold text-blue-500">${i.stock}</td><td class="p-3 text-xs text-slate-400">${i.caducidad}</td><td class="p-3"><span class="px-2 py-1 rounded text-[9px] font-black ${bc}">${i.estado_bpa}</span></td><td class="p-3"><span class="px-2 py-1 rounded text-[9px] font-black ${ac}">${i.abc}</span></td><td class="p-3 text-[9px] text-slate-400">${i.zona}</td></tr>`; });
+}
+
+async function regE(){ await fetch('/api/entradas',{method:'POST',headers:getH(),body:JSON.stringify({nombre_medicamento:document.getElementById('e_n').value,numero_lote:document.getElementById('e_l').value,cantidad:parseInt(document.getElementById('e_c').value),fecha_caducidad:document.getElementById('e_d').value,zona:'General',origen:document.getElementById('e_p').value})}); ['e_n','e_l','e_c','e_d','e_p'].forEach(id=>document.getElementById(id).value=''); }
+async function regS(){ const res=await fetch('/api/salidas',{method:'POST',headers:getH(),body:JSON.stringify({nombre_medicamento:document.getElementById('s_n').value,cantidad_requerida:parseInt(document.getElementById('s_c').value),destino:document.getElementById('s_o').value})}); if(!res.ok){const e=await res.json();showToast(e.detail||'Sin stock','error');} ['s_n','s_c','s_o'].forEach(id=>document.getElementById(id).value=''); }
+
+// -----------------------------------------------------------------------
+// PEDIDOS
+// -----------------------------------------------------------------------
+async function cargarPedidos(){
+    const res=await fetch('/api/pedidos',{headers:getH()}); if(!res.ok) return;
+    todosPedidos=await res.json(); renderPedidos(todosPedidos);
+}
+
+function filtrarPedidos(estado){
+    if(estado==='TODOS') renderPedidos(todosPedidos);
+    else renderPedidos(todosPedidos.filter(p=>p.estado===estado));
+}
+
+function renderPedidos(pedidos){
+    const c=document.getElementById('lista-pedidos'); c.innerHTML='';
+    if(!pedidos.length){ c.innerHTML='<p class="text-slate-400 italic text-center py-8">No hay pedidos</p>'; return; }
+    pedidos.forEach(p=>{
+        const items=p.items.map(i=>`<div class="flex justify-between text-xs py-1 border-b dark:border-slate-700"><span>${i.medicamento}</span><span class="font-mono">${i.cantidad_surtida||0}/${i.cantidad_solicitada} <span class="text-[9px] ${i.estado==='SURTIDO'?'text-green-500':i.estado==='SIN_STOCK'?'text-red-500':'text-slate-400'}">${i.estado}</span></span></div>`).join('');
+        const ruta=p.ruta?`<div class="mt-2 text-[9px] text-slate-400">🚚 ${p.ruta.rutero||'—'} | Temp. salida: ${p.ruta.temperatura_salida||'—'}°C | llegada: ${p.ruta.temperatura_llegada||'—'}°C</div>`:'';
+        const acciones=renderAccionesPedido(p);
+        c.innerHTML+=`<div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 ${p.estado==='ENTREGADO'?'border-teal-500':p.estado==='EN_RUTA'?'border-green-500':p.estado==='LISTO'?'border-blue-500':p.estado==='EN_PICKING'?'border-yellow-500':'border-slate-300'}">
+            <div class="flex justify-between items-start mb-3">
+                <div><p class="font-black text-sm">Pedido #${p.id} — <span class="text-blue-500">${p.farmacia}</span></p><p class="text-[10px] text-slate-400">${p.fecha_pedido}${p.fecha_entrega_estimada?' | Entrega estimada: '+p.fecha_entrega_estimada:''}</p>${p.notas?`<p class="text-[10px] italic text-slate-400 mt-1">${p.notas}</p>`:''}</div>
+                <div class="flex items-center gap-2">${badgePedido(p.estado)}${acciones}</div>
             </div>
+            <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">${items}</div>
+            ${ruta}
+        </div>`;
+    });
+}
 
-            <!-- Alertas Stock -->
-            <div id="panel-alertas" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-2xl shadow-sm">
-                <h3 class="text-red-700 dark:text-red-400 font-bold flex items-center gap-2 mb-4 text-sm">⚠️ ALERTAS DE REABASTECIMIENTO</h3>
-                <div id="lista-alertas" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-            </div>
+function renderAccionesPedido(p){
+    let btns='';
+    if(rLog==='FARMACIA'&&p.estado==='PENDIENTE') btns+=`<button onclick="cancelarPedido(${p.id})" class="text-red-500 text-[10px] font-bold hover:underline">Cancelar</button>`;
+    if(['ADMIN','SUPERVISOR','OPERADOR'].includes(rLog)&&p.estado==='PENDIENTE') btns+=`<button onclick="generarPicking(${p.id})" class="bg-yellow-500 text-white px-3 py-1 rounded text-[10px] font-bold">📋 Picking</button>`;
+    if(['ADMIN','SUPERVISOR','OPERADOR'].includes(rLog)&&p.estado==='EN_PICKING') btns+=`<button onclick="abrirModalPicking(${p.id})" class="bg-yellow-600 text-white px-3 py-1 rounded text-[10px] font-bold">✅ Completar</button>`;
+    if(['ADMIN','SUPERVISOR','OPERADOR','RUTERO'].includes(rLog)&&p.estado==='LISTO') btns+=`<button onclick="abrirModalRuta(${p.id})" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold">🚚 Salir</button>`;
+    if(['ADMIN','SUPERVISOR','RUTERO','FARMACIA'].includes(rLog)&&p.estado==='EN_RUTA') btns+=`<button onclick="abrirModalEntrega(${p.id})" class="bg-teal-600 text-white px-3 py-1 rounded text-[10px] font-bold">✅ Entregar</button>`;
+    return btns;
+}
 
-            <!-- Alertas BPA -->
-            <div id="panel-bpa" class="hidden bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 p-6 rounded-2xl shadow-sm">
-                <h3 class="text-orange-700 dark:text-orange-400 font-bold flex items-center gap-2 mb-4 text-sm">🧪 ALERTAS BPA — CADUCIDAD</h3>
-                <div id="lista-bpa" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
-            </div>
+function abrirModalPedido(){
+    itemsPedido=[];
+    document.getElementById('items-pedido').innerHTML='';
+    document.getElementById('ped_fecha').value='';
+    document.getElementById('ped_notas').value='';
+    // Si es FARMACIA, ocultar selector y usar su farmacia
+    if(rLog==='FARMACIA'){
+        document.getElementById('pedido-farmacia-wrap').classList.add('hidden');
+    } else {
+        document.getElementById('pedido-farmacia-wrap').classList.remove('hidden');
+    }
+    document.getElementById('mod-pedido').classList.remove('hidden');
+}
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
-                    <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">Balance de Inventario</h3>
-                    <canvas id="gInv"></canvas>
-                </div>
-                <div class="space-y-6">
-                    <div id="panel-top" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
-                        <h3 class="font-bold mb-4 text-xs uppercase text-slate-500">🏆 Productos más demandados</h3>
-                        <div id="lista-top" class="space-y-2"></div>
-                    </div>
-                    <div id="b-gFin" class="hidden bg-white dark:bg-slate-800 p-6 rounded-2xl shadow"><canvas id="gFin"></canvas></div>
-                </div>
-            </div>
-        </div>
+function agregarItem(){
+    const med=document.getElementById('item_med').value, cant=parseInt(document.getElementById('item_cant').value);
+    if(!med||!cant) return;
+    itemsPedido.push({medicamento:med,cantidad_solicitada:cant});
+    const c=document.getElementById('items-pedido');
+    c.innerHTML+=`<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-2 rounded text-xs"><span>${med}</span><span class="font-mono font-bold">${cant} und.</span></div>`;
+    document.getElementById('item_med').value=''; document.getElementById('item_cant').value='';
+}
 
-        <!-- ALMACÉN -->
-        <div id="v-alm" class="hidden space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-3xl font-bold dark:text-white">Almacén</h2>
-                <button onclick="expPDF('t-inv','Inventario_Nexus')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">📄 PDF</button>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div class="space-y-4">
-                    <form onsubmit="event.preventDefault(); regE();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-t-4 border-green-500">
-                        <h3 class="font-bold mb-4 uppercase text-[10px] text-slate-500">Entrada Manual</h3>
-                        <input type="text" id="e_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <input type="text" id="e_l" placeholder="Lote" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none font-mono">
-                        <input type="number" id="e_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <input type="date" id="e_d" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none text-sm">
-                        <input type="text" id="e_p" placeholder="Origen" required class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold">Ingresar</button>
-                    </form>
-                    <form onsubmit="event.preventDefault(); regS();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-t-4 border-orange-500">
-                        <h3 class="font-bold mb-4 uppercase text-[10px] text-slate-500">Salida FEFO ✅</h3>
-                        <input type="text" id="s_n" placeholder="Medicamento" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <input type="number" id="s_c" placeholder="Cantidad" required class="w-full mb-2 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <input type="text" id="s_o" placeholder="Destino" required class="w-full mb-4 p-3 border rounded-lg dark:bg-slate-700 outline-none">
-                        <button type="submit" class="w-full bg-orange-500 text-white py-3 rounded-lg font-bold">Surtir</button>
-                    </form>
-                </div>
-                <div class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden flex flex-col">
-                    <div class="p-4 border-b dark:border-slate-700">
-                        <input type="text" id="f-inv" onkeyup="fil('t-inv','f-inv')" placeholder="🔍 Filtrar..." class="w-full p-2 border rounded-lg dark:bg-slate-700 outline-none">
-                    </div>
-                    <div class="overflow-y-auto h-[550px]">
-                        <table id="t-inv" class="w-full text-left text-sm">
-                            <thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 font-bold uppercase text-[10px] text-slate-500">
-                                <tr>
-                                    <th class="p-3">Medicamento</th>
-                                    <th class="p-3">Lote</th>
-                                    <th class="p-3">Stock</th>
-                                    <th class="p-3">Vence</th>
-                                    <th class="p-3">BPA</th>
-                                    <th class="p-3">ABC</th>
-                                    <th class="p-3">Zona</th>
-                                </tr>
-                            </thead>
-                            <tbody id="b-inv" class="divide-y dark:divide-slate-700"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+async function enviarPedido(){
+    if(!itemsPedido.length){ showToast('Agrega al menos un item','error'); return; }
+    const fid=rLog==='FARMACIA'?farmaciaId:parseInt(document.getElementById('ped_farm').value);
+    if(!fid){ showToast('Selecciona una farmacia','error'); return; }
+    const body={farmacia_id:fid,items:itemsPedido,fecha_entrega_estimada:document.getElementById('ped_fecha').value||null,notas:document.getElementById('ped_notas').value||null};
+    const res=await fetch('/api/pedidos',{method:'POST',headers:getH(),body:JSON.stringify(body)});
+    if(res.ok){ showToast('Pedido enviado'); document.getElementById('mod-pedido').classList.add('hidden'); itemsPedido=[]; }
+    else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+}
 
-        <!-- COMPRAS -->
-        <div id="v-com" class="hidden space-y-6">
-            <h2 class="text-3xl font-bold dark:text-white">Órdenes de Compra</h2>
-            <form onsubmit="event.preventDefault(); crearOC();" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow border-l-8 border-teal-500 flex gap-4 items-end">
-                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Proveedor</label><select id="o_p" class="w-full p-2 border rounded-lg dark:bg-slate-700"></select></div>
-                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Producto</label><input type="text" id="o_m" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
-                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Cant.</label><input type="number" id="o_c" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
-                <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Costo $</label><input type="number" step="0.01" id="o_t" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
-                <button type="submit" class="bg-teal-600 text-white px-8 py-2 rounded-lg font-bold">Generar OC</button>
-            </form>
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden">
-                <table id="t-com" class="w-full text-left text-sm">
-                    <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500">
-                        <tr><th class="p-4">Fecha</th><th class="p-4">Proveedor</th><th class="p-4">Producto</th><th class="p-4">Total</th><th class="p-4 text-center">Estado</th></tr>
-                    </thead>
-                    <tbody id="b-com" class="divide-y dark:divide-slate-700"></tbody>
-                </table>
-            </div>
-        </div>
+async function cancelarPedido(id){ if(confirm('¿Cancelar pedido?')) await fetch(`/api/pedidos/${id}/cancelar`,{method:'PUT',headers:getH()}); }
 
-        <!-- FINANZAS -->
-        <div id="v-fin" class="hidden space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-3xl font-bold text-yellow-500">Finanzas</h2>
-                <button onclick="expPDF('t-fin','Reporte_Nexus_Finanzas')" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg">📄 PDF Finanzas</button>
-            </div>
-            <form onsubmit="event.preventDefault(); regFin();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-yellow-500">
-                <select id="f_t" class="p-2 border rounded dark:bg-slate-700"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select>
-                <input type="number" step="0.01" id="f_m" placeholder="Monto" class="p-2 border rounded dark:bg-slate-700">
-                <input type="text" id="f_c" placeholder="Concepto" class="p-2 border rounded flex-1 dark:bg-slate-700">
-                <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded font-bold">Guardar</button>
-            </form>
-            <div class="bg-white dark:bg-slate-800 rounded h-[450px] overflow-y-auto">
-                <table id="t-fin" class="w-full text-sm">
-                    <thead><tr class="bg-slate-50 dark:bg-slate-950 font-bold text-slate-500 uppercase text-[10px]"><th class="p-3">Fecha</th><th class="p-3">Tipo</th><th class="p-3">Concepto</th><th class="p-3 text-right">Monto</th></tr></thead>
-                    <tbody id="b-fin" class="divide-y"></tbody>
-                </table>
-            </div>
-        </div>
+async function generarPicking(id){
+    const res=await fetch(`/api/pedidos/${id}/picking`,{method:'POST',headers:getH()});
+    if(res.ok) showToast('Picking generado'); else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+}
 
-        <!-- KÁRDEX -->
-        <div id="v-kar" class="hidden space-y-4">
-            <h2 class="text-2xl font-bold dark:text-white">Kárdex de Auditoría</h2>
-            <div class="bg-white dark:bg-slate-800 rounded shadow h-[600px] overflow-y-auto">
-                <table id="t-mov" class="w-full text-sm">
-                    <thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 text-slate-500 font-bold uppercase text-[10px]">
-                        <tr><th class="p-4">Fecha</th><th class="p-4">Operación</th><th class="p-4">Ítem</th><th class="p-4 text-center">Cantidad</th><th class="p-4">Detalle</th></tr>
-                    </thead>
-                    <tbody id="b-mov" class="divide-y dark:divide-slate-700"></tbody>
-                </table>
-            </div>
-        </div>
+function abrirModalPicking(id){ pedidoActivo=id; document.getElementById('pick-id').innerText=id; document.getElementById('pick_alm').value=''; document.getElementById('mod-picking').classList.remove('hidden'); }
+async function completarPicking(){
+    const res=await fetch(`/api/pedidos/${pedidoActivo}/picking/completar`,{method:'PUT',headers:getH(),body:JSON.stringify({almacenista:document.getElementById('pick_alm').value})});
+    if(res.ok){ showToast('Picking completado — Pedido LISTO'); document.getElementById('mod-picking').classList.add('hidden'); }
+    else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+}
 
-        <!-- ANÁLISIS ABC -->
-        <div id="v-abc" class="hidden space-y-6">
-            <h2 class="text-2xl font-bold dark:text-white">🏷️ Análisis ABC + BPA + Slotting</h2>
-            <div class="grid grid-cols-3 gap-4 text-center">
-                <div class="bg-green-50 dark:bg-green-900/20 border border-green-300 p-4 rounded-xl">
-                    <p class="text-xs font-bold text-green-700 uppercase mb-1">Clase A — Alta Rotación</p>
-                    <p class="text-[10px] text-slate-500">80% de las salidas totales. Control estricto.</p>
-                </div>
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 p-4 rounded-xl">
-                    <p class="text-xs font-bold text-yellow-700 uppercase mb-1">Clase B — Rotación Media</p>
-                    <p class="text-[10px] text-slate-500">Del 80% al 95% acumulado.</p>
-                </div>
-                <div class="bg-slate-100 dark:bg-slate-800 border border-slate-300 p-4 rounded-xl">
-                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Clase C — Baja Rotación</p>
-                    <p class="text-[10px] text-slate-500">Restante 5%. Muchos SKUs, pocas salidas.</p>
-                </div>
-            </div>
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-100 dark:bg-slate-950 font-bold uppercase text-[10px] text-slate-500 sticky top-0">
-                        <tr>
-                            <th class="p-3">Medicamento</th>
-                            <th class="p-3 text-center">Clase</th>
-                            <th class="p-3 text-center">Salidas</th>
-                            <th class="p-3">Zona (Slotting)</th>
-                            <th class="p-3 text-center">Temp.</th>
-                            <th class="p-3 text-center">❄️ Refrig.</th>
-                            <th class="p-3 text-center">⚠️ Control.</th>
-                            <th class="p-3 text-center">Editar</th>
-                        </tr>
-                    </thead>
-                    <tbody id="b-abc" class="divide-y dark:divide-slate-700"></tbody>
-                </table>
-            </div>
-        </div>
+function abrirModalRuta(id){ pedidoActivo=id; document.getElementById('ruta-id').innerText=id; document.getElementById('ruta_rutero').value=''; document.getElementById('ruta_temp').value=''; document.getElementById('mod-ruta').classList.remove('hidden'); }
+async function confirmarSalidaRuta(){
+    const res=await fetch(`/api/pedidos/${pedidoActivo}/ruta/salida`,{method:'POST',headers:getH(),body:JSON.stringify({rutero:document.getElementById('ruta_rutero').value,temperatura_salida:parseFloat(document.getElementById('ruta_temp').value)||null})});
+    if(res.ok){ showToast('Pedido EN RUTA 🚚'); document.getElementById('mod-ruta').classList.add('hidden'); }
+    else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+}
 
-        <!-- USUARIOS -->
-        <div id="v-usr" class="hidden space-y-4">
-            <h2 class="text-2xl font-bold dark:text-white">Usuarios</h2>
-            <form onsubmit="event.preventDefault(); crearUsr();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end">
-                <input type="text" id="u_nom" placeholder="User" required class="p-2 border rounded flex-1 dark:bg-slate-700">
-                <input type="password" id="u_pas" placeholder="Pass" required class="p-2 border rounded flex-1 dark:bg-slate-700">
-                <select id="u_rol" class="p-2 border rounded flex-1 dark:bg-slate-700"><option value="OPERADOR">Operador</option><option value="SUPERVISOR">Supervisor</option><option value="ADMIN">Admin</option></select>
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Añadir</button>
-            </form>
-            <table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-usr" class="divide-y"></tbody></table>
-        </div>
+function abrirModalEntrega(id){ pedidoActivo=id; document.getElementById('entrega-id').innerText=id; document.getElementById('entrega_temp').value=''; document.getElementById('entrega_notas').value=''; document.getElementById('mod-entrega').classList.remove('hidden'); }
+async function confirmarEntrega(){
+    const res=await fetch(`/api/pedidos/${pedidoActivo}/ruta/entregar`,{method:'PUT',headers:getH(),body:JSON.stringify({temperatura_llegada:parseFloat(document.getElementById('entrega_temp').value)||null,notas_entrega:document.getElementById('entrega_notas').value||null})});
+    if(res.ok){ showToast('Entrega confirmada ✅'); document.getElementById('mod-entrega').classList.add('hidden'); }
+    else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+}
+async function rechazarEntrega(){
+    const notas=document.getElementById('entrega_notas').value;
+    if(!notas){ showToast('Indica el motivo del rechazo','error'); return; }
+    const res=await fetch(`/api/pedidos/${pedidoActivo}/ruta/rechazar`,{method:'PUT',headers:getH(),body:JSON.stringify({notas_entrega:notas})});
+    if(res.ok){ showToast('Entrega rechazada','error'); document.getElementById('mod-entrega').classList.add('hidden'); }
+}
 
-        <!-- PROVEEDORES -->
-        <div id="v-pro" class="hidden space-y-4">
-            <h2 class="text-2xl font-bold dark:text-white">Proveedores</h2>
-            <form onsubmit="event.preventDefault(); crearProv();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 border-l-8 border-indigo-600">
-                <input type="text" id="p_nom" placeholder="Empresa" required class="p-2 border rounded flex-1 dark:bg-slate-700">
-                <input type="text" id="p_con" placeholder="Contacto" required class="p-2 border rounded flex-1 dark:bg-slate-700">
-                <button type="submit" class="bg-indigo-600 text-white px-8 py-2 rounded font-bold">Registrar</button>
-            </form>
-            <table class="w-full text-sm bg-white dark:bg-slate-800 rounded shadow"><tbody id="b-prov" class="divide-y"></tbody></table>
-        </div>
-    </main>
+// -----------------------------------------------------------------------
+// FARMACIAS
+// -----------------------------------------------------------------------
+async function cargarFarmacias(){
+    const res=await fetch('/api/farmacias',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json();
+    const b=document.getElementById('b-farmacias'); if(b) b.innerHTML='';
+    const sel=document.getElementById('ped_farm'); if(sel) sel.innerHTML='<option value="">Seleccionar...</option>';
+    const dev=document.getElementById('dev_farm'); if(dev) dev.innerHTML='<option value="">Seleccionar...</option>';
+    const usr=document.getElementById('u_farm'); if(usr) usr.innerHTML='<option value="">Sin farmacia</option>';
+    d.forEach(f=>{
+        if(b) b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold">🏪 ${f.nombre}</td><td class="p-3 text-slate-500 text-xs">${f.direccion}</td><td class="p-3 text-slate-500 text-xs">${f.contacto}</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[10px] font-bold ${f.activa?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${f.activa?'Activa':'Inactiva'}</span></td></tr>`;
+        if(sel) sel.innerHTML+=`<option value="${f.id}">${f.nombre}</option>`;
+        if(dev) dev.innerHTML+=`<option value="${f.id}">${f.nombre}</option>`;
+        if(usr) usr.innerHTML+=`<option value="${f.id}">${f.nombre}</option>`;
+    });
+}
 
-    <script>
-        let uLog=null, rLog=null, ws=null, cInv=null, cFin=null, ordenPendiente=null, catalogoEditando=null;
+async function crearFarmacia(){
+    await fetch('/api/farmacias',{method:'POST',headers:getH(),body:JSON.stringify({nombre:document.getElementById('farm_nom').value,direccion:document.getElementById('farm_dir').value,contacto:document.getElementById('farm_con').value})});
+    ['farm_nom','farm_dir','farm_con'].forEach(id=>document.getElementById(id).value='');
+}
 
-        // -----------------------------------------------------------------------
-        // UTILIDADES
-        // -----------------------------------------------------------------------
-        function getHeaders() { return {'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`}; }
-        function showToast(m, t='success') {
-            const c = document.getElementById('toast-container'), e = document.createElement('div');
-            e.className = `px-6 py-4 rounded-lg text-white font-bold shadow-2xl transition-all ${t==='success'?'bg-green-600':'bg-red-600'}`;
-            e.innerText = m; c.appendChild(e); setTimeout(()=>e.remove(), 3000);
-        }
-        function toggleTema() { document.documentElement.classList.toggle('dark'); }
-        function cerrarSesion() { localStorage.removeItem('token'); location.reload(); }
-        function fil(t,i) {
-            const b = document.getElementById(i).value.toLowerCase(), f = document.getElementById(t).getElementsByTagName('tr');
-            for(let j=1; j<f.length; j++) f[j].style.display = f[j].innerText.toLowerCase().includes(b) ? "" : "none";
-        }
+// -----------------------------------------------------------------------
+// DEVOLUCIONES
+// -----------------------------------------------------------------------
+async function cargarDevoluciones(){
+    const res=await fetch('/api/devoluciones',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json(); const b=document.getElementById('b-devoluciones'); if(!b) return; b.innerHTML='';
+    d.forEach(dev=>{
+        const esQFR=['ADMIN','QFR'].includes(rLog)&&dev.estado==='PENDIENTE';
+        b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs">
+            <td class="p-3 text-slate-400">${dev.fecha}</td><td class="p-3 font-bold">${dev.farmacia}</td>
+            <td class="p-3">${dev.medicamento}</td><td class="p-3 font-mono">${dev.lote}</td>
+            <td class="p-3 text-center font-bold">${dev.cantidad}</td><td class="p-3">${dev.motivo}</td>
+            <td class="p-3">${dev.destino}</td>
+            <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[9px] font-bold ${dev.estado==='APROBADA'?'bg-green-100 text-green-700':dev.estado==='RECHAZADA'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">${dev.estado}</span></td>
+            <td class="p-3 text-center">${esQFR?`<button onclick="resolverDev(${dev.id},true)" class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-bold mr-1">✅</button><button onclick="resolverDev(${dev.id},false)" class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-bold">❌</button>`:dev.aprobado_por?`<span class="text-[9px] text-slate-400">${dev.aprobado_por}</span>`:''}</td>
+        </tr>`;
+    });
+}
 
-        // Formato de dinero con comas de miles
-        function fmt(n) {
-            if(n === undefined || n === null) return '$0.00';
-            return '$' + Number(n).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        }
+async function crearDevolucion(){
+    const fid=rLog==='FARMACIA'?farmaciaId:parseInt(document.getElementById('dev_farm').value);
+    const body={farmacia_id:fid,medicamento:document.getElementById('dev_med').value,numero_lote:document.getElementById('dev_lot').value,cantidad:parseInt(document.getElementById('dev_cant').value),motivo:document.getElementById('dev_mot').value,destino:document.getElementById('dev_dest').value};
+    const res=await fetch('/api/devoluciones',{method:'POST',headers:getH(),body:JSON.stringify(body)});
+    if(res.ok) showToast('Devolución registrada'); else { const e=await res.json(); showToast(e.detail||'Error','error'); }
+    ['dev_med','dev_lot','dev_cant'].forEach(id=>document.getElementById(id).value='');
+}
 
-        // -----------------------------------------------------------------------
-        // WEBSOCKET
-        // -----------------------------------------------------------------------
-        function conectarWS() {
-            ws = new WebSocket(`ws://${window.location.host}/ws`);
-            ws.onopen = () => document.getElementById('live').classList.remove('hidden');
-            ws.onmessage = (e) => { if(e.data === "update") syncAll(); };
-            ws.onclose = () => { document.getElementById('live').classList.add('hidden'); setTimeout(conectarWS, 3000); };
-        }
+async function resolverDev(id,aprobado){
+    await fetch(`/api/devoluciones/${id}/resolver`,{method:'PUT',headers:getH(),body:JSON.stringify({aprobado,notas:''})});
+    showToast(aprobado?'Devolución aprobada':'Devolución rechazada', aprobado?'success':'error');
+}
 
-        function syncAll() {
-            cargarDashboard();
-            cargarInventario();
-            if(rLog==='ADMIN'||rLog==='SUPERVISOR') { cargarHistorial(); cargarUsuarios(); cargarProveedores(); cargarCompras(); cargarABC(); }
-            if(rLog==='ADMIN') cargarFinanzas();
-        }
+// -----------------------------------------------------------------------
+// CUARENTENA
+// -----------------------------------------------------------------------
+async function cargarCuarentena(){
+    const res=await fetch('/api/cuarentena',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json(); const b=document.getElementById('b-cuarentena'); if(!b) return; b.innerHTML='';
+    d.forEach(c=>{
+        const esQFR=['ADMIN','QFR'].includes(rLog)&&c.estado==='EN_REVISION';
+        b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs">
+            <td class="p-3 text-slate-400">${c.fecha_ingreso}</td><td class="p-3 font-bold">${c.medicamento}</td>
+            <td class="p-3 font-mono">${c.numero_lote}</td><td class="p-3 text-center font-bold">${c.cantidad}</td>
+            <td class="p-3">${c.motivo}</td>
+            <td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[9px] font-bold ${c.estado==='EN_REVISION'?'bg-orange-100 text-orange-700':c.estado==='APROBADO'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${c.estado}</span></td>
+            <td class="p-3 text-slate-400">${c.resuelto_por||'—'}</td>
+            <td class="p-3 text-center">${esQFR?`<button onclick="resolverCuarentena(${c.id},'APROBADO')" class="bg-green-500 text-white px-2 py-1 rounded text-[9px] font-bold mr-1">✅ Stock</button><button onclick="resolverCuarentena(${c.id},'RECHAZADO')" class="bg-red-500 text-white px-2 py-1 rounded text-[9px] font-bold">❌ Desechar</button>`:''}</td>
+        </tr>`;
+    });
+}
 
-        // -----------------------------------------------------------------------
-        // LOGIN
-        // -----------------------------------------------------------------------
-        async function iniciarSesion() {
-            const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('l_u').value, password: document.getElementById('l_p').value}) });
-            if(res.ok) {
-                const d = await res.json(); localStorage.setItem('token', d.access_token); uLog = d.username; rLog = d.rol;
-                document.getElementById('lbl-u').innerText = uLog; document.getElementById('lbl-r').innerText = rLog;
-                document.getElementById('login-screen').classList.add('hidden');
-                if(rLog==='ADMIN'||rLog==='SUPERVISOR') document.getElementById('m-scm').classList.remove('hidden');
-                if(rLog==='ADMIN') {
-                    document.getElementById('m-adm').classList.remove('hidden');
-                    document.getElementById('card-utilidad').classList.remove('hidden');
-                    document.getElementById('b-gFin').classList.remove('hidden');
-                    document.getElementById('card-abc').classList.remove('hidden');
-                }
-                conectarWS(); cambiarVista('v-dash'); showToast(`Acceso seguro Nexus: ${uLog}`);
-            } else showToast("Acceso denegado", "error");
-        }
+async function crearCuarentena(){
+    await fetch('/api/cuarentena',{method:'POST',headers:getH(),body:JSON.stringify({medicamento:document.getElementById('cuar_med').value,numero_lote:document.getElementById('cuar_lot').value,cantidad:parseInt(document.getElementById('cuar_cant').value),motivo:document.getElementById('cuar_mot').value,notas:''})});
+    ['cuar_med','cuar_lot','cuar_cant'].forEach(id=>document.getElementById(id).value='');
+}
 
-        function cambiarVista(id) {
-            ['v-dash','v-alm','v-kar','v-usr','v-fin','v-pro','v-com','v-abc'].forEach(v => {
-                const el=document.getElementById(v); if(el) el.classList.add('hidden');
-            });
-            document.getElementById(id).classList.remove('hidden');
-            syncAll();
-        }
+async function resolverCuarentena(id,decision){
+    await fetch(`/api/cuarentena/${id}/resolver`,{method:'PUT',headers:getH(),body:JSON.stringify({decision,notas:''})});
+    showToast(decision==='APROBADO'?'Lote aprobado → Stock':'Lote desechado',decision==='APROBADO'?'success':'error');
+}
 
-        // -----------------------------------------------------------------------
-        // DASHBOARD
-        // -----------------------------------------------------------------------
-        async function cargarDashboard() {
-            const res = await fetch('/api/dashboard', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            document.getElementById('d-lot').innerText = d.total_lotes;
-            document.getElementById('d-rie').innerText = d.en_riesgo;
+// -----------------------------------------------------------------------
+// ABC / BPA
+// -----------------------------------------------------------------------
+async function cargarABC(){
+    const res=await fetch('/api/abc',{headers:getH()}); if(!res.ok) return;
+    const d=await res.json(); const b=document.getElementById('b-abc'); if(!b) return; b.innerHTML='';
+    d.forEach(c=>{ const cc=c.clasificacion==='A'?'bg-green-500 text-white':c.clasificacion==='B'?'bg-yellow-400 text-slate-900':'bg-slate-300 text-slate-700'; b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-sm">${c.nombre}</td><td class="p-3 text-center"><span class="px-3 py-1 rounded-full text-xs font-black ${cc}">${c.clasificacion}</span></td><td class="p-3 text-center font-bold">${c.salidas_totales}</td><td class="p-3 text-xs text-slate-500">${c.zona}</td><td class="p-3 text-center text-xs font-mono">${c.temp_min}°–${c.temp_max}°C</td><td class="p-3 text-center">${c.refrigeracion?'<span class="text-blue-500 font-black">❄️ Sí</span>':'<span class="text-slate-300 text-xs">No</span>'}</td><td class="p-3 text-center">${c.controlado?'<span class="text-red-500 font-black">⚠️ Sí</span>':'<span class="text-slate-300 text-xs">No</span>'}</td><td class="p-3 text-center"><button onclick='abrirBPA(${JSON.stringify(c)})' class="text-purple-500 hover:text-purple-700 font-bold text-lg">✏️</button></td></tr>`; });
+}
 
-            if(rLog==='ADMIN') {
-                document.getElementById('d-uti').innerText = fmt(d.utilidad);
-                document.getElementById('d-uti').className = d.utilidad >= 0
-                    ? "text-3xl font-bold mt-2 text-indigo-600"
-                    : "text-3xl font-bold mt-2 text-red-600";
-                if(cFin) cFin.destroy();
-                cFin = new Chart(document.getElementById('gFin'), {
-                    type: 'bar',
-                    data: { labels:['Ingresos','Gastos'], datasets:[{data:[d.ingresos, d.gastos], backgroundColor:['#10b981','#ef4444'], borderRadius:4}] },
-                    options: { plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => fmt(ctx.raw) } } } }
-                });
-                // ABC resumen
-                if(d.abc_resumen) {
-                    document.getElementById('abc-a').innerText = d.abc_resumen.A || 0;
-                    document.getElementById('abc-b').innerText = d.abc_resumen.B || 0;
-                    document.getElementById('abc-c').innerText = d.abc_resumen.C || 0;
-                }
-            }
+function abrirBPA(c){
+    catalogoEditando=c.id; document.getElementById('bpa-nombre').innerText=c.nombre;
+    document.getElementById('bpa_tmin').value=c.temp_min; document.getElementById('bpa_tmax').value=c.temp_max;
+    document.getElementById('bpa_ref').checked=c.refrigeracion; document.getElementById('bpa_ctrl').checked=c.controlado;
+    const sel=document.getElementById('bpa_zona'); for(let i=0;i<sel.options.length;i++){ if(sel.options[i].value===c.zona){sel.selectedIndex=i;break;} }
+    document.getElementById('mod-bpa').classList.remove('hidden');
+}
 
-            // Alertas de stock
-            const pA = document.getElementById('panel-alertas'), lA = document.getElementById('lista-alertas');
-            if(d.alertas_stock && d.alertas_stock.length > 0) {
-                pA.classList.remove('hidden'); lA.innerHTML = '';
-                d.alertas_stock.forEach(a => {
-                    lA.innerHTML += `<div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-red-600 shadow-sm flex justify-between items-center text-slate-900 dark:text-white">
-                        <div><p class="text-[9px] font-bold text-red-500 uppercase tracking-widest">Agotándose</p><p class="font-bold text-xs">${a.medicamento}</p></div>
-                        <p class="text-xl font-black text-red-600">${a.stock}</p></div>`;
-                });
-            } else pA.classList.add('hidden');
+async function guardarBPA(){
+    if(!catalogoEditando) return;
+    const res=await fetch(`/api/catalogo/${catalogoEditando}/bpa`,{method:'PUT',headers:getH(),body:JSON.stringify({temp_min:parseFloat(document.getElementById('bpa_tmin').value),temp_max:parseFloat(document.getElementById('bpa_tmax').value),zona_almacenaje:document.getElementById('bpa_zona').value,requiere_refrigeracion:document.getElementById('bpa_ref').checked,controlado:document.getElementById('bpa_ctrl').checked})});
+    if(res.ok){ showToast('BPA actualizado'); document.getElementById('mod-bpa').classList.add('hidden'); cargarABC(); cargarInventario(); }
+    else showToast('Error al guardar','error');
+}
 
-            // Alertas BPA
-            const pB = document.getElementById('panel-bpa'), lB = document.getElementById('lista-bpa');
-            if(d.alertas_bpa && d.alertas_bpa.length > 0) {
-                pB.classList.remove('hidden'); lB.innerHTML = '';
-                d.alertas_bpa.forEach(a => {
-                    const color = a.nivel==='VENCIDO' ? 'border-red-700 bg-red-100 dark:bg-red-900/30' : a.nivel==='CRITICO' ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/20' : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20';
-                    const badge = a.nivel==='VENCIDO' ? 'bg-red-600 text-white' : a.nivel==='CRITICO' ? 'bg-orange-500 text-white' : 'bg-yellow-400 text-slate-900';
-                    const diasTxt = a.dias < 0 ? `Venció hace ${Math.abs(a.dias)}d` : `${a.dias}d restantes`;
-                    lB.innerHTML += `<div class="p-3 rounded-xl border-l-4 ${color} shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div><p class="font-bold text-xs">${a.medicamento}</p><p class="text-[9px] font-mono text-slate-500">${a.lote}</p></div>
-                            <span class="px-2 py-1 rounded text-[9px] font-black ${badge}">${a.nivel}</span>
-                        </div>
-                        <p class="text-[10px] mt-1 font-bold text-slate-600 dark:text-slate-300">${diasTxt}</p>
-                    </div>`;
-                });
-            } else pB.classList.add('hidden');
+// -----------------------------------------------------------------------
+// COMPRAS
+// -----------------------------------------------------------------------
+async function crearOC(){ await fetch('/api/compras',{method:'POST',headers:getH(),body:JSON.stringify({proveedor_id:parseInt(document.getElementById('o_p').value),medicamento:document.getElementById('o_m').value,cantidad:parseInt(document.getElementById('o_c').value),costo_total:parseFloat(document.getElementById('o_t').value)})}); ['o_m','o_c','o_t'].forEach(id=>document.getElementById(id).value=''); }
+async function cargarCompras(){ const res=await fetch('/api/compras',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-com'); b.innerHTML=''; d.forEach(o=>{ const pill=o.estado==='PENDIENTE'?`<button onclick="abrirModalRecibir(${o.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow text-xs font-bold">RECIBIR</button>`:`<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black">COMPLETA</span>`; b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 text-[9px] text-slate-400">${o.fecha}<br><b>OC#${o.id}</b></td><td class="p-3 font-bold text-xs">${o.proveedor}</td><td class="p-3 font-bold text-blue-600 text-xs">${o.medicamento}<span class="block text-[9px] text-slate-500">x${o.cantidad}</span></td><td class="p-3 font-bold text-xs">${fmt(o.costo_total)}</td><td class="p-3 text-center">${pill}</td></tr>`; }); }
 
-            // Top productos
-            const lT = document.getElementById('lista-top');
-            lT.innerHTML = d.top_productos.length > 0 ? '' : '<p class="text-slate-400 italic text-xs">Aún no hay ventas...</p>';
-            d.top_productos.forEach((p, idx) => {
-                lT.innerHTML += `<div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-xs">
-                    <span class="font-bold">#${idx+1} ${p.nombre}</span>
-                    <span class="bg-blue-600 text-white px-2 py-1 rounded-full font-bold">${p.ventas} Surtidos</span></div>`;
-            });
+function abrirModalRecibir(id){ ordenPendiente=id; document.getElementById('mod-rec').classList.remove('hidden'); }
+async function confirmarRec(){ const b={numero_lote:document.getElementById('r_lot').value,fecha_caducidad:document.getElementById('r_cad').value}; if(!b.numero_lote||!b.fecha_caducidad) return showToast('Faltan datos','error'); const res=await fetch(`/api/compras/${ordenPendiente}/recibir`,{method:'PUT',headers:getH(),body:JSON.stringify(b)}); if(res.ok){showToast('Ingresado a Stock');document.getElementById('mod-rec').classList.add('hidden');['r_lot','r_cad'].forEach(id=>document.getElementById(id).value='');} else{const e=await res.json();showToast(e.detail||'Error','error');} }
 
-            if(cInv) cInv.destroy();
-            cInv = new Chart(document.getElementById('gInv'), {
-                type: 'doughnut',
-                data: { labels:['Sanos','Riesgo'], datasets:[{data:[d.total_lotes-d.en_riesgo, d.en_riesgo], backgroundColor:['#3b82f6','#f97316'], borderWidth:0}] },
-                options: { cutout:'75%' }
-            });
-        }
+// -----------------------------------------------------------------------
+// KÁRDEX
+// -----------------------------------------------------------------------
+async function cargarHistorial(){ const res=await fetch('/api/movimientos',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-mov'); b.innerHTML=''; d.forEach(m=>b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 text-xs text-slate-400">${m.fecha}</td><td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${m.tipo==='ENTRADA'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${m.tipo}</span></td><td class="p-4 font-bold text-xs">${m.medicamento}<span class="block text-[8px] text-slate-500 font-mono">${m.lote}</span></td><td class="p-4 font-bold text-center">${m.cantidad}</td><td class="p-4 text-xs italic text-slate-400">📍 ${m.destino_origen}</td></tr>`); }
 
-        // -----------------------------------------------------------------------
-        // INVENTARIO con columnas BPA / ABC / Zona
-        // -----------------------------------------------------------------------
-        async function cargarInventario() {
-            const res = await fetch('/api/inventario', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-inv'); b.innerHTML = '';
-            d.forEach(i => {
-                const bpaColor = i.estado_bpa==='VENCIDO' ? 'bg-red-600 text-white' : i.estado_bpa==='CRITICO' ? 'bg-orange-500 text-white' : i.estado_bpa==='ALERTA' ? 'bg-yellow-400 text-slate-900' : 'bg-green-100 text-green-700';
-                const abcColor = i.abc==='A' ? 'bg-green-100 text-green-700' : i.abc==='B' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500';
-                const flags = `${i.refrigeracion ? '❄️' : ''}${i.controlado ? '⚠️' : ''}`;
-                b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                    <td class="p-3 font-bold text-sm">${flags} ${i.medicamento}</td>
-                    <td class="p-3 font-mono text-slate-500 text-xs">${i.lote}</td>
-                    <td class="p-3 font-bold text-blue-500">${i.stock}</td>
-                    <td class="p-3 text-xs font-bold text-slate-400">${i.caducidad}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-[9px] font-black ${bpaColor}">${i.estado_bpa}</span></td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-[9px] font-black ${abcColor}">${i.abc}</span></td>
-                    <td class="p-3 text-[9px] text-slate-400 font-bold">${i.zona}</td>
-                </tr>`;
-            });
-        }
+// -----------------------------------------------------------------------
+// FINANZAS
+// -----------------------------------------------------------------------
+async function regFin(){ await fetch('/api/finanzas',{method:'POST',headers:getH(),body:JSON.stringify({tipo:document.getElementById('f_t').value,monto:parseFloat(document.getElementById('f_m').value),concepto:document.getElementById('f_c').value})}); document.getElementById('f_m').value=''; document.getElementById('f_c').value=''; }
+async function cargarFinanzas(){ const res=await fetch('/api/finanzas',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-fin'); b.innerHTML=''; d.forEach(f=>b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 text-[10px] text-slate-400">${f.fecha}</td><td class="p-4 font-bold text-[10px] ${f.tipo==='INGRESO'?'text-green-500':'text-red-500'}">${f.tipo}</td><td class="p-4 font-bold text-xs">${f.concepto}</td><td class="p-4 font-bold text-right text-xs">${fmt(f.monto)}</td></tr>`); }
 
-        // -----------------------------------------------------------------------
-        // KÁRDEX
-        // -----------------------------------------------------------------------
-        async function cargarHistorial() {
-            const res = await fetch('/api/movimientos', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-mov'); b.innerHTML = '';
-            d.forEach(m => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                <td class="p-4 text-xs font-bold text-slate-400">${m.fecha}</td>
-                <td class="p-4"><span class="px-2 py-1 rounded text-[10px] font-bold ${m.tipo==='ENTRADA'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${m.tipo}</span></td>
-                <td class="p-4 font-bold text-xs">${m.medicamento} <span class="block text-[8px] text-slate-500 font-mono">${m.lote}</span></td>
-                <td class="p-4 font-bold text-center">${m.cantidad}</td>
-                <td class="p-4 text-xs italic text-slate-400 font-bold">📍 ${m.destino_origen}</td>
-            </tr>`);
-        }
+// -----------------------------------------------------------------------
+// USUARIOS
+// -----------------------------------------------------------------------
+async function cargarUsuarios(){ const res=await fetch('/api/usuarios',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-usr'); b.innerHTML=''; d.forEach(u=>b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-xs">${u.username}</td><td class="p-3"><span class="px-3 py-1 rounded-full text-[10px] bg-blue-100 text-blue-700 font-bold">${u.rol}</span></td><td class="p-3 text-[10px] text-slate-400">${u.farmacia_id?'Farmacia #'+u.farmacia_id:''}</td><td class="p-3 text-right">${(rLog==='ADMIN'&&u.username!=='admin'&&u.username!==uLog)?`<button onclick="delUsr('${u.username}')" class="text-red-500 font-bold text-[10px]">ELIMINAR</button>`:''}</td></tr>`); }
+async function crearUsr(){ const fid=document.getElementById('u_farm').value; await fetch('/api/usuarios',{method:'POST',headers:getH(),body:JSON.stringify({username:document.getElementById('u_nom').value,password:document.getElementById('u_pas').value,rol:document.getElementById('u_rol').value,farmacia_id:fid?parseInt(fid):null})}); document.getElementById('u_nom').value=''; document.getElementById('u_pas').value=''; }
+async function delUsr(u){ if(confirm(`¿Eliminar ${u}?`)) await fetch(`/api/usuarios/${u}`,{method:'DELETE',headers:getH()}); }
 
-        // -----------------------------------------------------------------------
-        // FINANZAS — con formato de dinero
-        // -----------------------------------------------------------------------
-        async function cargarFinanzas() {
-            const res = await fetch('/api/finanzas', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-fin'); b.innerHTML = '';
-            d.forEach(f => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                <td class="p-4 text-[10px] text-slate-400 font-bold">${f.fecha}</td>
-                <td class="p-4 font-bold text-[10px] ${f.tipo==='INGRESO'?'text-green-500':'text-red-500'}">${f.tipo}</td>
-                <td class="p-4 font-bold text-slate-700 dark:text-slate-300 text-xs">${f.concepto}</td>
-                <td class="p-4 font-bold text-right text-xs">${fmt(f.monto)}</td>
-            </tr>`);
-        }
-
-        // -----------------------------------------------------------------------
-        // USUARIOS
-        // -----------------------------------------------------------------------
-        async function cargarUsuarios() {
-            const res = await fetch('/api/usuarios', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-usr'); b.innerHTML = '';
-            d.forEach(u => b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                <td class="p-3 font-bold text-xs">${u.username}</td>
-                <td class="p-3"><span class="px-3 py-1 rounded-full text-[10px] bg-blue-100 text-blue-700 font-bold uppercase">${u.rol}</span></td>
-                <td class="p-3 text-right">${(rLog==='ADMIN'&&u.username!=='admin'&&u.username!==uLog)?`<button onclick="delUsr('${u.username}')" class="text-red-500 font-bold text-[10px]">ELIMINAR</button>`:''}</td>
-            </tr>`);
-        }
-
-        // -----------------------------------------------------------------------
-        // PROVEEDORES
-        // -----------------------------------------------------------------------
-        async function cargarProveedores() {
-            const res = await fetch('/api/proveedores', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-prov'); const sel = document.getElementById('o_p');
-            b.innerHTML = ''; sel.innerHTML = '<option value="">Proveedor...</option>';
-            d.forEach(p => {
-                b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="p-3 font-bold text-sm">🏢 ${p.nombre}</td><td class="p-3 text-slate-500 italic text-xs">👤 ${p.contacto}</td></tr>`;
-                sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
-            });
-        }
-
-        // -----------------------------------------------------------------------
-        // COMPRAS — con formato de dinero
-        // -----------------------------------------------------------------------
-        async function crearOC() {
-            const b = { proveedor_id: parseInt(document.getElementById('o_p').value), medicamento: document.getElementById('o_m').value, cantidad: parseInt(document.getElementById('o_c').value), costo_total: parseFloat(document.getElementById('o_t').value) };
-            await fetch('/api/compras', { method: 'POST', headers: getHeaders(), body: JSON.stringify(b) });
-            ['o_m','o_c','o_t'].forEach(id => document.getElementById(id).value = '');
-        }
-
-        async function cargarCompras() {
-            const res = await fetch('/api/compras', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-com'); b.innerHTML = '';
-            d.forEach(o => {
-                let pill = o.estado==='PENDIENTE'
-                    ? `<button onclick="abrirModalRecibir(${o.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow text-xs font-bold transition">RECIBIR</button>`
-                    : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black tracking-tighter uppercase">COMPLETA</span>`;
-                b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                    <td class="p-3 text-[9px] font-bold text-slate-400">${o.fecha} <br> <b>OC#${o.id}</b></td>
-                    <td class="p-3 font-bold text-xs uppercase">${o.proveedor}</td>
-                    <td class="p-3 font-bold text-blue-600 text-xs">${o.medicamento} <span class="text-[9px] font-normal text-slate-500 block">x${o.cantidad} Und.</span></td>
-                    <td class="p-3 font-bold text-xs">${fmt(o.costo_total)}</td>
-                    <td class="p-3 text-center">${pill}</td>
-                </tr>`;
-            });
-        }
-
-        // -----------------------------------------------------------------------
-        // ANÁLISIS ABC
-        // -----------------------------------------------------------------------
-        async function cargarABC() {
-            const res = await fetch('/api/abc', { headers: getHeaders() }); if(!res.ok) return;
-            const d = await res.json();
-            const b = document.getElementById('b-abc'); b.innerHTML = '';
-            d.forEach(c => {
-                const claseColor = c.clasificacion==='A' ? 'bg-green-500 text-white' : c.clasificacion==='B' ? 'bg-yellow-400 text-slate-900' : 'bg-slate-300 text-slate-700';
-                b.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                    <td class="p-3 font-bold text-sm">${c.nombre}</td>
-                    <td class="p-3 text-center"><span class="px-3 py-1 rounded-full text-xs font-black ${claseColor}">${c.clasificacion}</span></td>
-                    <td class="p-3 text-center font-bold">${c.salidas_totales}</td>
-                    <td class="p-3 text-xs text-slate-500 font-bold">${c.zona}</td>
-                    <td class="p-3 text-center text-xs font-mono">${c.temp_min}°–${c.temp_max}°C</td>
-                    <td class="p-3 text-center">${c.refrigeracion ? '<span class="text-blue-500 font-black">❄️ Sí</span>' : '<span class="text-slate-300 text-xs">No</span>'}</td>
-                    <td class="p-3 text-center">${c.controlado ? '<span class="text-red-500 font-black">⚠️ Sí</span>' : '<span class="text-slate-300 text-xs">No</span>'}</td>
-                    <td class="p-3 text-center">
-                        <button onclick='abrirBPA(${JSON.stringify(c)})' class="text-purple-500 hover:text-purple-700 font-bold text-lg transition">✏️</button>
-                    </td>
-                </tr>`;
-            });
-        }
-
-        function abrirBPA(c) {
-            catalogoEditando = c.id;
-            document.getElementById('bpa-nombre').innerText = c.nombre;
-            document.getElementById('bpa_tmin').value = c.temp_min;
-            document.getElementById('bpa_tmax').value = c.temp_max;
-            document.getElementById('bpa_ref').checked = c.refrigeracion;
-            document.getElementById('bpa_ctrl').checked = c.controlado;
-            // Seleccionar la zona actual en el select
-            const sel = document.getElementById('bpa_zona');
-            for(let i=0; i<sel.options.length; i++) {
-                if(sel.options[i].value === c.zona) { sel.selectedIndex = i; break; }
-            }
-            document.getElementById('mod-bpa').classList.remove('hidden');
-        }
-
-        async function guardarBPA() {
-            if(!catalogoEditando) return;
-            const body = {
-                temp_min: parseFloat(document.getElementById('bpa_tmin').value),
-                temp_max: parseFloat(document.getElementById('bpa_tmax').value),
-                zona_almacenaje: document.getElementById('bpa_zona').value,
-                requiere_refrigeracion: document.getElementById('bpa_ref').checked,
-                controlado: document.getElementById('bpa_ctrl').checked,
-            };
-            const res = await fetch(`/api/catalogo/${catalogoEditando}/bpa`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
-            if(res.ok) {
-                showToast("Condiciones BPA actualizadas");
-                document.getElementById('mod-bpa').classList.add('hidden');
-                cargarABC();
-                cargarInventario();
-            } else {
-                showToast("Error al guardar", "error");
-            }
-        }
-
-        // -----------------------------------------------------------------------
-        // ACCIONES
-        // -----------------------------------------------------------------------
-        function abrirModalRecibir(id) { ordenPendiente = id; document.getElementById('mod-rec').classList.remove('hidden'); }
-
-        async function confirmarRec() {
-            const b = { numero_lote: document.getElementById('r_lot').value, fecha_caducidad: document.getElementById('r_cad').value };
-            if(!b.numero_lote || !b.fecha_caducidad) return showToast("Faltan datos", "error");
-            const res = await fetch(`/api/compras/${ordenPendiente}/recibir`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(b) });
-            if(res.ok) { showToast("Ingresado a Nexus Stock!"); document.getElementById('mod-rec').classList.add('hidden'); ['r_lot','r_cad'].forEach(id=>document.getElementById(id).value=''); }
-            else { const e = await res.json(); showToast(e.detail || "Error", "error"); }
-        }
-
-        async function regE() {
-            await fetch('/api/entradas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ nombre_medicamento: document.getElementById('e_n').value, numero_lote: document.getElementById('e_l').value, cantidad: parseInt(document.getElementById('e_c').value), fecha_caducidad: document.getElementById('e_d').value, zona: "General", origen: document.getElementById('e_p').value }) });
-            ['e_n','e_l','e_c','e_d','e_p'].forEach(id => document.getElementById(id).value = '');
-        }
-
-        async function regS() {
-            const res = await fetch('/api/salidas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ nombre_medicamento: document.getElementById('s_n').value, cantidad_requerida: parseInt(document.getElementById('s_c').value), destino: document.getElementById('s_o').value }) });
-            if(!res.ok) { const e = await res.json(); showToast(e.detail || "Sin stock", "error"); }
-            ['s_n','s_c','s_o'].forEach(id => document.getElementById(id).value = '');
-        }
-
-        async function regFin() {
-            await fetch('/api/finanzas', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ tipo: document.getElementById('f_t').value, monto: parseFloat(document.getElementById('f_m').value), concepto: document.getElementById('f_c').value }) });
-            document.getElementById('f_m').value=''; document.getElementById('f_c').value='';
-        }
-
-        async function delUsr(u) {
-            if(confirm(`¿Eliminar ${u}?`)) await fetch(`/api/usuarios/${u}`, { method: 'DELETE', headers: getHeaders() });
-        }
-
-        async function crearUsr() {
-            await fetch('/api/usuarios', { method: 'POST', headers: getHeaders(), body: JSON.stringify({username: document.getElementById('u_nom').value, password: document.getElementById('u_pas').value, rol: document.getElementById('u_rol').value}) });
-            document.getElementById('u_nom').value=''; document.getElementById('u_pas').value='';
-        }
-
-        async function crearProv() {
-            await fetch('/api/proveedores', { method: 'POST', headers: getHeaders(), body: JSON.stringify({nombre: document.getElementById('p_nom').value, contacto: document.getElementById('p_con').value}) });
-            document.getElementById('p_nom').value=''; document.getElementById('p_con').value='';
-        }
-
-        function expPDF(id, t) {
-            const { jsPDF } = window.jspdf; const doc = new jsPDF(), f = new Date().toISOString().split('T')[0];
-            doc.text(`Nexus ERP - ${t} - ${f}`, 14, 15);
-            doc.autoTable({ html: `#${id}`, startY: 20, theme:'grid', headStyles: {fillColor: [30, 58, 138]} });
-            doc.save(`Nexus_${t}_${f}.pdf`);
-        }
-    </script>
+// -----------------------------------------------------------------------
+// PROVEEDORES
+// -----------------------------------------------------------------------
+async function cargarProveedores(){ const res=await fetch('/api/proveedores',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-prov'); const sel=document.getElementById('o_p'); b.innerHTML=''; sel.innerHTML='<option value="">Proveedor...</option>'; d.forEach(p=>{ b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-sm">🏢 ${p.nombre}</td><td class="p-3 text-slate-500 text-xs">👤 ${p.contacto}</td></tr>`; sel.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`; }); }
+async function crearProv(){ await fetch('/api/proveedores',{method:'POST',headers:getH(),body:JSON.stringify({nombre:document.getElementById('p_nom').value,contacto:document.getElementById('p_con').value})}); document.getElementById('p_nom').value=''; document.getElementById('p_con').value=''; }
+</script>
 </body>
 </html>
