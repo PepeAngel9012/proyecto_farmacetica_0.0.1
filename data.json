@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "version": "0.0.1",
+    "descripcion": "Almacenamiento paralelo local del sistema Nexus ERP - CEDIS",
+    "ultima_actualizacion": null
+  },
+  "usuarios": [],
+  "farmacias": [],
+  "pedidos": [],
+  "catalogo": [],
+  "movimientos": []
+}

@@ -1,0 +1,23 @@
+name: "miapp_farmacia"
+arch: "amd64"
+platform: "linux"
+version: "1.0.0"
+section: "default"
+priority: "extra"
+maintainer: "Jose <josecocecional@gmail.com>"
+description: "Paquete que despliega mi stack de Docker Compose"
+vendor: "MiProyecto"
+contents:
+  - src: ./
+    dst: /opt/mi-app/
+    type: tree
+  - src: ./mi-app.service
+    dst: /etc/systemd/system/mi-app.service
+
+depends:
+  - docker.io
+  - docker-compose
+
+scripts:
+  postinstall: ./scripts/postinstall.sh
+  preremove: ./scripts/preremove.sh

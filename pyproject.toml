@@ -5,6 +5,7 @@ description = "Nexus ERP - Sistema de Gestión Médica e Inteligencia de Negocio
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "requests",
     "fastapi[standard]>=0.135.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",

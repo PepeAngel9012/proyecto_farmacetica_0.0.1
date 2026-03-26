@@ -19,7 +19,7 @@ services:
       - POSTGRES_PASSWORD=nexus_password123
       - POSTGRES_DB=nexus_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - nexus_pgdata:/var/lib/postgresql/data
 
