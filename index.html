@@ -2,6 +2,7 @@
 <html lang="es" class="light">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus ERP - CEDIS Farmacéutico</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,9 +13,38 @@
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-thumb{background:#3b82f6;border-radius:10px}
         .dark ::-webkit-scrollbar-thumb{background:#1e40af}
+        /* MODO OSCURO - contraste */
+        .dark table td { color: #e2e8f0; }
+        .dark table th { color: #94a3b8; }
+        .dark input, .dark select { color: #f1f5f9 !important; }
+        .dark input::placeholder { color: #64748b !important; }
+        .dark label { color: #cbd5e1; }
+        .dark .text-slate-500 { color: #94a3b8 !important; }
+        .dark .italic { color: #94a3b8; }
+        .dark .divide-y > tr { border-color: #334155; }
+        /* RESPONSIVE MOVIL */
+        #overlay-menu { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:199; }
+        #overlay-menu.open { display:block; }
+        #btn-menu { display:none; }
+        @media (max-width: 768px) {
+            aside { position:fixed; left:-280px; top:0; height:100vh; z-index:200;
+                    transition:left 0.25s ease; width:260px !important; }
+            aside.open { left:0; }
+            main { width:100% !important; padding:1rem !important; }
+            #btn-menu { display:flex !important; }
+            .grid-cols-4, .md\:grid-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+            .grid-cols-3, .lg\:grid-cols-2 { grid-template-columns:repeat(1,minmax(0,1fr)) !important; }
+            .xl\:grid-cols-3 { grid-template-columns:repeat(1,minmax(0,1fr)) !important; }
+            .text-3xl { font-size:1.3rem !important; }
+            table { font-size:11px !important; }
+            table th, table td { padding:5px 4px !important; }
+            .page-title { padding-left:3.5rem !important; }
+            .page-title-bar { padding-left:3.5rem !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex h-screen overflow-hidden transition-colors duration-300 font-sans">
+<div id="overlay-menu" onclick="cerrarMenu()"></div>
 
 <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -148,8 +178,8 @@
 </div>
 
 <!-- ===================== SIDEBAR ===================== -->
-<aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-2xl flex-shrink-0">
-    <div class="p-6 border-b border-slate-800 flex justify-between items-center text-white font-black tracking-widest">NEXUS<button onclick="toggleTema()">🌓</button></div>
+<aside id="sidebar" class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-2xl flex-shrink-0">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center text-white font-black tracking-widest">NEXUS<div class="flex gap-3"><button onclick="toggleTema()" class="text-slate-400 hover:text-white">🌓</button><button id="btn-cerrar-menu" onclick="cerrarMenu()" class="text-slate-400 hover:text-white md:hidden text-lg leading-none">✕</button></div></div>
     <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-sm">
         <button onclick="cambiarVista('v-dash')" class="w-full text-left p-3 rounded-lg hover:bg-blue-600 hover:text-white transition">📊 Dashboard</button>
 
@@ -206,17 +236,30 @@
         <p id="lbl-u" class="text-white font-bold uppercase text-sm"></p>
         <p id="lbl-r" class="text-[10px] text-blue-400 mb-1"></p>
         <p id="lbl-farm" class="text-[9px] text-cyan-400 mb-2"></p>
-        <button onclick="cerrarSesion()" class="text-xs hover:text-red-400 underline">Cerrar Sesión</button>
+        <div class="flex justify-center gap-1 mb-2 flex-wrap">
+            <button onclick="setLang('es')" id="lang-es" class="text-[10px] px-2 py-1 rounded font-bold bg-blue-600 text-white">ES</button>
+            <button onclick="setLang('en')" id="lang-en" class="text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600">EN</button>
+            <button onclick="setLang('pt')" id="lang-pt" class="text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600">PT</button>
+            <button onclick="setLang('fr')" id="lang-fr" class="text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600">FR</button>
+            <button onclick="setLang('it')" id="lang-it" class="text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600">IT</button>
+            <button onclick="setLang('de')" id="lang-de" class="text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600">DE</button>
+        </div>
+        <button onclick="cerrarSesion()" id="btn-logout" class="text-xs hover:text-red-400 underline">Cerrar Sesión</button>
     </div>
 </aside>
 
 <!-- ===================== MAIN ===================== -->
 <main class="flex-1 p-8 overflow-y-auto relative bg-slate-50 dark:bg-slate-900">
+<button id="btn-menu" onclick="abrirMenu()" class="fixed top-4 left-4 z-[150] bg-slate-900 text-white p-3 rounded-xl shadow-2xl">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+</button>
 <div id="live" class="hidden absolute top-6 right-8 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold animate-pulse tracking-widest">EN VIVO</div>
 
 <!-- DASHBOARD -->
 <div id="v-dash" class="hidden space-y-6">
-    <h2 class="text-3xl font-bold dark:text-white">Nexus Intelligence</h2>
+    <h2 class="text-3xl font-bold dark:text-white page-title">Nexus Intelligence</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
         <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-4 border-blue-500">
             <p class="text-[10px] text-slate-500 font-bold uppercase">Lotes Activos</p>
@@ -278,7 +321,7 @@
 
 <!-- INVENTARIO -->
 <div id="v-alm" class="hidden space-y-6">
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center page-title-bar">
         <h2 class="text-3xl font-bold dark:text-white">Almacén</h2>
         <button onclick="expPDF('t-inv','Inventario_Nexus')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">📄 PDF</button>
     </div>
@@ -417,7 +460,7 @@
 
 <!-- COMPRAS -->
 <div id="v-com" class="hidden space-y-6">
-    <h2 class="text-3xl font-bold dark:text-white">Órdenes de Compra</h2>
+    <h2 class="text-3xl font-bold dark:text-white page-title">Órdenes de Compra</h2>
     <form onsubmit="event.preventDefault(); crearOC();" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow border-l-8 border-teal-500 flex gap-3 items-end flex-wrap">
         <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Proveedor</label><select id="o_p" class="p-2 border rounded-lg dark:bg-slate-700 min-w-[150px]"></select></div>
         <div class="flex-1"><label class="text-[10px] font-bold text-slate-500 mb-1 block">Producto</label><input type="text" id="o_m" required class="w-full p-2 border rounded-lg dark:bg-slate-700"></div>
@@ -436,28 +479,43 @@
 </div>
 
 <!-- FINANZAS -->
-<div id="v-fin" class="hidden space-y-6">
-    <div class="flex justify-between items-center">
+<div id="v-fin" class="hidden space-y-5">
+    <div class="flex justify-between items-center flex-wrap gap-3">
         <h2 class="text-3xl font-bold text-yellow-500">Finanzas</h2>
-        <button onclick="expPDF('t-fin','Finanzas_Nexus')" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">📄 PDF</button>
+        <div class="flex gap-2 flex-wrap items-center">
+            <select id="f_filtro_mes" onchange="cargarFinanzas()" class="p-2 border rounded dark:bg-slate-700 dark:text-white text-sm">
+                <option value="">Todos los periodos</option>
+            </select>
+            <button onclick="expPDF('t-fin','Finanzas_Nexus')" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">PDF</button>
+        </div>
     </div>
-    <form onsubmit="event.preventDefault(); regFin();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-yellow-500">
-        <select id="f_t" class="p-2 border rounded dark:bg-slate-700"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select>
-        <input type="number" step="0.01" id="f_m" placeholder="Monto" class="p-2 border rounded dark:bg-slate-700">
-        <input type="text" id="f_c" placeholder="Concepto" class="p-2 border rounded flex-1 dark:bg-slate-700">
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border-l-4 border-green-500">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Ingresos del periodo</p>
+            <p id="fin-total-ing" class="text-xl font-black text-green-500">$0.00</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border-l-4 border-red-500">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Gastos del periodo</p>
+            <p id="fin-total-gas" class="text-xl font-black text-red-500">$0.00</p>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border-l-4 border-indigo-500">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Utilidad Neta</p>
+            <p id="fin-total-uti" class="text-xl font-black text-indigo-500">$0.00</p>
+        </div>
+    </div>
+    <form onsubmit="event.preventDefault(); regFin();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end border-l-8 border-yellow-500 flex-wrap">
+        <select id="f_t" class="p-2 border rounded dark:bg-slate-700 dark:text-white"><option value="INGRESO">Ingreso</option><option value="GASTO">Gasto</option></select>
+        <input type="number" step="0.01" id="f_m" placeholder="Monto" class="p-2 border rounded dark:bg-slate-700 w-32">
+        <input type="text" id="f_c" placeholder="Concepto" class="p-2 border rounded flex-1 dark:bg-slate-700 min-w-[160px]">
         <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded font-bold">Guardar</button>
     </form>
-    <div class="bg-white dark:bg-slate-800 rounded h-[450px] overflow-y-auto">
-        <table id="t-fin" class="w-full text-sm">
-            <thead><tr class="bg-slate-50 dark:bg-slate-950 font-bold text-slate-500 uppercase text-[10px]"><th class="p-3">Fecha</th><th class="p-3">Tipo</th><th class="p-3">Concepto</th><th class="p-3 text-right">Monto</th></tr></thead>
-            <tbody id="b-fin" class="divide-y"></tbody>
-        </table>
-    </div>
+    <div id="fin-grupos" class="space-y-4"></div>
+    <div class="hidden"><table id="t-fin"><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Monto</th></tr></thead><tbody id="b-fin"></tbody></table></div>
 </div>
 
 <!-- KÁRDEX -->
 <div id="v-kar" class="hidden space-y-4">
-    <h2 class="text-2xl font-bold dark:text-white">Kárdex de Auditoría</h2>
+    <h2 class="text-2xl font-bold dark:text-white page-title">Kárdex de Auditoría</h2>
     <div class="bg-white dark:bg-slate-800 rounded shadow h-[600px] overflow-y-auto">
         <table id="t-mov" class="w-full text-sm">
             <thead class="bg-slate-100 dark:bg-slate-950 sticky top-0 text-slate-500 font-bold uppercase text-[10px]">
@@ -488,7 +546,7 @@
 
 <!-- USUARIOS -->
 <div id="v-usr" class="hidden space-y-4">
-    <h2 class="text-2xl font-bold dark:text-white">Usuarios</h2>
+    <h2 class="text-2xl font-bold dark:text-white page-title">Usuarios</h2>
     <form onsubmit="event.preventDefault(); crearUsr();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 items-end flex-wrap">
         <input type="text" id="u_nom" placeholder="Username" required class="p-2 border rounded dark:bg-slate-700">
         <input type="password" id="u_pas" placeholder="Password" required class="p-2 border rounded dark:bg-slate-700">
@@ -510,7 +568,7 @@
 
 <!-- PROVEEDORES -->
 <div id="v-pro" class="hidden space-y-4">
-    <h2 class="text-2xl font-bold dark:text-white">Proveedores</h2>
+    <h2 class="text-2xl font-bold dark:text-white page-title">Proveedores</h2>
     <form onsubmit="event.preventDefault(); crearProv();" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow flex gap-2 border-l-8 border-indigo-600">
         <input type="text" id="p_nom" placeholder="Empresa" required class="p-2 border rounded flex-1 dark:bg-slate-700">
         <input type="text" id="p_con" placeholder="Contacto" required class="p-2 border rounded flex-1 dark:bg-slate-700">
@@ -531,9 +589,39 @@ function getH(){ return {'Content-Type':'application/json','Authorization':`Bear
 function fmt(n){ return '$'+Number(n||0).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function showToast(m,t='success'){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className=`px-5 py-3 rounded-lg text-white font-bold shadow-2xl ${t==='success'?'bg-green-600':'bg-red-600'}`; e.innerText=m; c.appendChild(e); setTimeout(()=>e.remove(),3000); }
 function toggleTema(){ document.documentElement.classList.toggle('dark'); }
-function cerrarSesion(){ localStorage.removeItem('token'); location.reload(); }
+function cerrarSesion(){ localStorage.removeItem('token'); localStorage.removeItem('nexus_user'); location.reload(); }
 function fil(t,i){ const b=document.getElementById(i).value.toLowerCase(),f=document.getElementById(t).getElementsByTagName('tr'); for(let j=1;j<f.length;j++) f[j].style.display=f[j].innerText.toLowerCase().includes(b)?'':'none'; }
-function expPDF(id,t){ const {jsPDF}=window.jspdf,doc=new jsPDF(),f=new Date().toISOString().split('T')[0]; doc.text(`Nexus ERP - ${t} - ${f}`,14,15); doc.autoTable({html:`#${id}`,startY:20,theme:'grid',headStyles:{fillColor:[30,58,138]}}); doc.save(`Nexus_${t}_${f}.pdf`); }
+function limpiarTexto(s){
+    if(!s) return '';
+    return s.replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+            .replace(/[\u2600-\u27BF]/g,'')
+            .replace(/[\uFE00-\uFEFF]/g,'')
+            .replace(/[^\x00-\x7F\u00C0-\u024F]/g,' ')
+            .replace(/\s+/g,' ').trim();
+}
+function expPDF(id,t){
+    const {jsPDF}=window.jspdf, doc=new jsPDF(), f=new Date().toISOString().split('T')[0];
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('Nexus ERP - CEDIS Farmaceutico', 14, 12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100);
+    doc.text('Reporte: '+limpiarTexto(t)+'   Generado: '+f, 14, 19);
+    doc.setDrawColor(30,58,138); doc.line(14,22,196,22); doc.setTextColor(0);
+    const tbl=document.getElementById(id);
+    const heads=[[...tbl.querySelectorAll('thead th')].map(th=>limpiarTexto(th.innerText))];
+    const body=[...tbl.querySelectorAll('tbody tr')].map(tr=>[...tr.querySelectorAll('td')].map(td=>limpiarTexto(td.innerText)));
+    doc.autoTable({head:heads, body:body, startY:26, theme:'grid',
+        headStyles:{fillColor:[30,58,138],textColor:255,fontStyle:'bold',fontSize:8},
+        bodyStyles:{fontSize:8,textColor:[30,41,59]},
+        alternateRowStyles:{fillColor:[248,250,252]},
+        margin:{left:14,right:14}});
+    const pgs=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pgs;i++){
+        doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150);
+        doc.text('Nexus ERP - Pag '+i+' de '+pgs, 14, doc.internal.pageSize.height-7);
+        doc.text('Confidencial - Uso interno', 150, doc.internal.pageSize.height-7);
+    }
+    doc.save('Nexus_'+t+'_'+f+'.pdf');
+}
 
 // Badges de estado
 function badgePedido(estado){
@@ -565,17 +653,11 @@ function syncAll(){
 // -----------------------------------------------------------------------
 // LOGIN
 // -----------------------------------------------------------------------
-async function iniciarSesion(){
-    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('l_u').value,password:document.getElementById('l_p').value})});
-    if(!res.ok){ showToast('Acceso denegado','error'); return; }
-    const d=await res.json();
-    localStorage.setItem('token',d.access_token);
-    uLog=d.username; rLog=d.rol; farmaciaId=d.farmacia_id;
+function activarSesion(username, rol, fid, mostrarBienvenida=true){
+    uLog=username; rLog=rol; farmaciaId=fid;
     document.getElementById('lbl-u').innerText=uLog;
     document.getElementById('lbl-r').innerText=rLog;
     document.getElementById('login-screen').classList.add('hidden');
-
-    // Menús por rol
     const show=(id)=>document.getElementById(id).classList.remove('hidden');
     if(['ADMIN','SUPERVISOR','OPERADOR','QFR'].includes(rLog)) show('m-alm');
     if(['ADMIN','SUPERVISOR'].includes(rLog)) show('m-scm');
@@ -585,8 +667,31 @@ async function iniciarSesion(){
     if(rLog==='RUTERO') show('m-rutero');
     if(rLog==='ADMIN'){ show('m-adm'); document.getElementById('card-utilidad').classList.remove('hidden'); document.getElementById('b-gFin').classList.remove('hidden'); document.getElementById('card-abc').classList.remove('hidden'); }
     if(['ADMIN','SUPERVISOR','QFR'].includes(rLog)) document.getElementById('card-cuarentena').classList.remove('hidden');
+    conectarWS(); cambiarVista('v-dash');
+    if(mostrarBienvenida) showToast(`Bienvenido ${uLog} — ${rLog}`);
+    aplicarIdioma();
+}
 
-    conectarWS(); cambiarVista('v-dash'); showToast(`Bienvenido ${uLog} — ${rLog}`);
+async function iniciarSesion(){
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('l_u').value,password:document.getElementById('l_p').value})});
+    if(!res.ok){ showToast('Acceso denegado','error'); return; }
+    const d=await res.json();
+    localStorage.setItem('token',d.access_token);
+    localStorage.setItem('nexus_user', JSON.stringify({username:d.username, rol:d.rol, farmacia_id:d.farmacia_id}));
+    activarSesion(d.username, d.rol, d.farmacia_id, true);
+}
+
+async function autoLogin(){
+    const token=localStorage.getItem('token');
+    const userData=localStorage.getItem('nexus_user');
+    if(!token || !userData) return;
+    // Verificar que el token sigue siendo válido
+    try {
+        const res=await fetch('/api/dashboard',{headers:{'Authorization':'Bearer '+token}});
+        if(!res.ok){ localStorage.removeItem('token'); localStorage.removeItem('nexus_user'); return; }
+        const u=JSON.parse(userData);
+        activarSesion(u.username, u.rol, u.farmacia_id, false);
+    } catch(e){ localStorage.removeItem('token'); localStorage.removeItem('nexus_user'); }
 }
 
 function cambiarVista(id){
@@ -618,7 +723,30 @@ async function cargarDashboard(){
     if(d.alertas_stock&&d.alertas_stock.length>0){ pA.classList.remove('hidden'); lA.innerHTML=''; d.alertas_stock.forEach(a=>{ lA.innerHTML+=`<div class="bg-white dark:bg-slate-800 p-3 rounded-xl border-l-4 border-red-600 flex justify-between items-center"><div><p class="text-[9px] font-bold text-red-500 uppercase">Agotándose</p><p class="font-bold text-xs">${a.medicamento}</p></div><p class="text-xl font-black text-red-600">${a.stock}</p></div>`; }); } else pA.classList.add('hidden');
     // Alertas BPA
     const pB=document.getElementById('panel-bpa'),lB=document.getElementById('lista-bpa');
-    if(d.alertas_bpa&&d.alertas_bpa.length>0){ pB.classList.remove('hidden'); lB.innerHTML=''; d.alertas_bpa.forEach(a=>{ const col=a.nivel==='VENCIDO'?'border-red-700 bg-red-100':'a.nivel==="CRITICO"'?'border-orange-600 bg-orange-50':'border-yellow-500 bg-yellow-50'; const badge=a.nivel==='VENCIDO'?'bg-red-600 text-white':a.nivel==='CRITICO'?'bg-orange-500 text-white':'bg-yellow-400 text-slate-900'; lB.innerHTML+=`<div class="p-3 rounded-xl border-l-4 ${col} shadow-sm"><div class="flex justify-between"><div><p class="font-bold text-xs">${a.medicamento}</p><p class="text-[9px] font-mono text-slate-500">${a.lote}</p></div><span class="px-2 py-1 rounded text-[9px] font-black ${badge}">${a.nivel}</span></div><p class="text-[10px] mt-1 font-bold">${a.dias<0?`Venció hace ${Math.abs(a.dias)}d`:`${a.dias}d`}</p></div>`; }); } else pB.classList.add('hidden');
+    if(d.alertas_bpa&&d.alertas_bpa.length>0){
+        pB.classList.remove('hidden'); lB.innerHTML='';
+        d.alertas_bpa.forEach(a=>{
+            let card,badge,txtMed,txtLote,txtDias;
+            if(a.nivel==='VENCIDO'){
+                card='border-l-4 border-red-600 bg-red-600 dark:bg-red-900/70';
+                badge='bg-white/20 text-white'; txtMed='text-white'; txtLote='text-red-200'; txtDias='text-red-200';
+            } else if(a.nivel==='CRITICO'){
+                card='border-l-4 border-orange-500 bg-orange-500 dark:bg-orange-900/70';
+                badge='bg-white/20 text-white'; txtMed='text-white'; txtLote='text-orange-200'; txtDias='text-orange-200';
+            } else {
+                card='border-l-4 border-yellow-400 bg-yellow-400 dark:bg-yellow-700/70';
+                badge='bg-white/30 text-yellow-900 dark:text-white'; txtMed='text-yellow-900 dark:text-white'; txtLote='text-yellow-800 dark:text-yellow-200'; txtDias='text-yellow-800 dark:text-yellow-200';
+            }
+            const diasTxt=a.dias<0?`Venció hace ${Math.abs(a.dias)}d`:`${a.dias}d`;
+            lB.innerHTML+=`<div class="p-3 rounded-xl ${card} shadow">
+                <div class="flex justify-between items-start gap-1">
+                    <div class="min-w-0 flex-1"><p class="font-bold text-xs ${txtMed} truncate">${a.medicamento}</p><p class="text-[9px] font-mono ${txtLote}">${a.lote}</p></div>
+                    <span class="px-2 py-1 rounded text-[9px] font-black shrink-0 ${badge}">${a.nivel}</span>
+                </div>
+                <p class="text-[10px] mt-1 font-bold ${txtDias}">${diasTxt}</p>
+            </div>`;
+        });
+    } else pB.classList.add('hidden');
     // Top
     const lT=document.getElementById('lista-top'); lT.innerHTML=d.top_productos.length?'':'<p class="text-slate-400 italic text-xs">Sin ventas aún</p>';
     d.top_productos.forEach((p,idx)=>{ lT.innerHTML+=`<div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-xs"><span class="font-bold">#${idx+1} ${p.nombre}</span><span class="bg-blue-600 text-white px-2 py-1 rounded-full font-bold">${p.ventas}</span></div>`; });
@@ -871,8 +999,74 @@ async function cargarHistorial(){ const res=await fetch('/api/movimientos',{head
 // -----------------------------------------------------------------------
 // FINANZAS
 // -----------------------------------------------------------------------
-async function regFin(){ await fetch('/api/finanzas',{method:'POST',headers:getH(),body:JSON.stringify({tipo:document.getElementById('f_t').value,monto:parseFloat(document.getElementById('f_m').value),concepto:document.getElementById('f_c').value})}); document.getElementById('f_m').value=''; document.getElementById('f_c').value=''; }
-async function cargarFinanzas(){ const res=await fetch('/api/finanzas',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-fin'); b.innerHTML=''; d.forEach(f=>b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-4 text-[10px] text-slate-400">${f.fecha}</td><td class="p-4 font-bold text-[10px] ${f.tipo==='INGRESO'?'text-green-500':'text-red-500'}">${f.tipo}</td><td class="p-4 font-bold text-xs">${f.concepto}</td><td class="p-4 font-bold text-right text-xs">${fmt(f.monto)}</td></tr>`); }
+async function regFin(){
+    const res=await fetch('/api/finanzas',{method:'POST',headers:getH(),body:JSON.stringify({tipo:document.getElementById('f_t').value,monto:parseFloat(document.getElementById('f_m').value),concepto:document.getElementById('f_c').value})});
+    if(res.ok){ document.getElementById('f_m').value=''; document.getElementById('f_c').value=''; showToast('Registro guardado'); }
+}
+async function cargarFinanzas(){
+    const res=await fetch('/api/finanzas',{headers:getH()}); if(!res.ok) return;
+    const todos=await res.json();
+    const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    // Selector de meses
+    const sel=document.getElementById('f_filtro_mes');
+    const vistos=new Set();
+    todos.forEach(f=>{ const d=new Date(f.fecha); vistos.add(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
+    const ord=[...vistos].sort().reverse();
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Todos los periodos</option>';
+    ord.forEach(m=>{ const[yr,mo]=m.split('-'); sel.innerHTML+=`<option value="${m}">${MES[parseInt(mo)-1]} ${yr}</option>`; });
+    if(prev) sel.value=prev;
+    const filtro=sel.value;
+    const data=filtro?todos.filter(f=>{ const d=new Date(f.fecha); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===filtro; }):todos;
+    // Totales
+    const ing=data.filter(f=>f.tipo==='INGRESO').reduce((a,f)=>a+f.monto,0);
+    const gas=data.filter(f=>f.tipo==='GASTO').reduce((a,f)=>a+f.monto,0);
+    const uti=ing-gas;
+    document.getElementById('fin-total-ing').innerText=fmt(ing);
+    document.getElementById('fin-total-gas').innerText=fmt(gas);
+    const eu=document.getElementById('fin-total-uti');
+    eu.innerText=fmt(uti);
+    eu.className=uti>=0?'text-xl font-black text-indigo-500':'text-xl font-black text-red-500';
+    // Tabla PDF oculta
+    const bFin=document.getElementById('b-fin'); bFin.innerHTML='';
+    data.forEach(f=>bFin.innerHTML+=`<tr><td>${f.fecha.split(' ')[0]}</td><td>${f.tipo}</td><td>${f.concepto}</td><td>${fmt(f.monto)}</td></tr>`);
+    // Grupos por mes
+    const grupos={};
+    data.forEach(f=>{
+        const d=new Date(f.fecha);
+        const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+        if(!grupos[k]) grupos[k]={label:MES[d.getMonth()]+' '+d.getFullYear(),items:[],ing:0,gas:0};
+        grupos[k].items.push(f);
+        if(f.tipo==='INGRESO') grupos[k].ing+=f.monto; else grupos[k].gas+=f.monto;
+    });
+    const cont=document.getElementById('fin-grupos'); cont.innerHTML='';
+    Object.keys(grupos).sort().reverse().forEach(k=>{
+        const g=grupos[k], u=g.ing-g.gas;
+        cont.innerHTML+=`
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border dark:border-slate-700">
+            <div class="flex justify-between items-center px-5 py-3 bg-slate-50 dark:bg-slate-900/60 border-b dark:border-slate-700">
+                <span class="font-black text-sm dark:text-white">${g.label}</span>
+                <div class="flex gap-4 text-xs font-bold">
+                    <span class="text-green-500">+${fmt(g.ing)}</span>
+                    <span class="text-red-500">-${fmt(g.gas)}</span>
+                    <span class="${u>=0?'text-indigo-500':'text-red-600'}">${u>=0?'=':'='} ${fmt(u)}</span>
+                </div>
+            </div>
+            <table class="w-full text-xs">
+                <tbody class="divide-y dark:divide-slate-700">
+                ${g.items.map(f=>`
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="p-3 text-slate-400 w-28">${f.fecha.split(' ')[0]}</td>
+                    <td class="p-3 w-20"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${f.tipo==='INGRESO'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${f.tipo}</span></td>
+                    <td class="p-3 dark:text-slate-200">${f.concepto}</td>
+                    <td class="p-3 font-bold text-right dark:text-white">${fmt(f.monto)}</td>
+                </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>`;
+    });
+    if(!Object.keys(grupos).length) cont.innerHTML='<p class="text-slate-400 italic text-center py-8">Sin registros para este periodo</p>';
+}
 
 // -----------------------------------------------------------------------
 // USUARIOS
@@ -886,6 +1080,214 @@ async function delUsr(u){ if(confirm(`¿Eliminar ${u}?`)) await fetch(`/api/usua
 // -----------------------------------------------------------------------
 async function cargarProveedores(){ const res=await fetch('/api/proveedores',{headers:getH()}); if(!res.ok) return; const d=await res.json(); const b=document.getElementById('b-prov'); const sel=document.getElementById('o_p'); b.innerHTML=''; sel.innerHTML='<option value="">Proveedor...</option>'; d.forEach(p=>{ b.innerHTML+=`<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="p-3 font-bold text-sm">🏢 ${p.nombre}</td><td class="p-3 text-slate-500 text-xs">👤 ${p.contacto}</td></tr>`; sel.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`; }); }
 async function crearProv(){ await fetch('/api/proveedores',{method:'POST',headers:getH(),body:JSON.stringify({nombre:document.getElementById('p_nom').value,contacto:document.getElementById('p_con').value})}); document.getElementById('p_nom').value=''; document.getElementById('p_con').value=''; }
+
+// ═══════════════════════════════════
+// SISTEMA MULTIIDIOMA
+// ═══════════════════════════════════
+const I18N = {
+  es: {
+    dashboard:'Dashboard', inventario:'Inventario', almacen:'Almacén',
+    compras:'Compras', proveedores:'Proveedores', kardex:'Kárdex',
+    abc:'Análisis ABC', pedidos:'Pedidos', farmacias:'Farmacias',
+    devoluciones:'Devoluciones', cuarentena:'Cuarentena',
+    finanzas:'Finanzas', usuarios:'Usuarios', cerrarSesion:'Cerrar Sesión',
+    lotesActivos:'Lotes Activos', enRiesgo:'En Riesgo (30d)',
+    pedidosActivos:'Pedidos Activos', enRuta:'En Ruta',
+    utilidadNeta:'Utilidad Neta', enCuarentena:'En Cuarentena',
+    alertasReab:'ALERTAS DE REABASTECIMIENTO', alertasBPA:'ALERTAS BPA — CADUCIDAD',
+    balanceInv:'Balance Inventario', topProductos:'Top Productos',
+    filtrar:'Filtrar...', todosPeriodos:'Todos los periodos',
+    sinVentas:'Sin ventas aún', sinPedidos:'No hay pedidos',
+    operaciones:'OPERACIONES CEDIS', calidad:'CONTROL DE CALIDAD',
+    miFarmacia:'MI FARMACIA', misRutas:'MIS RUTAS', administracion:'ADMINISTRACIÓN',
+    scm:'SCM',
+  },
+  en: {
+    dashboard:'Dashboard', inventario:'Inventory', almacen:'Warehouse',
+    compras:'Purchases', proveedores:'Suppliers', kardex:'Audit Log',
+    abc:'ABC Analysis', pedidos:'Orders', farmacias:'Pharmacies',
+    devoluciones:'Returns', cuarentena:'Quarantine',
+    finanzas:'Finance', usuarios:'Users', cerrarSesion:'Log Out',
+    lotesActivos:'Active Lots', enRiesgo:'At Risk (30d)',
+    pedidosActivos:'Active Orders', enRuta:'In Transit',
+    utilidadNeta:'Net Profit', enCuarentena:'In Quarantine',
+    alertasReab:'RESTOCKING ALERTS', alertasBPA:'BPA ALERTS — EXPIRY',
+    balanceInv:'Inventory Balance', topProductos:'Top Products',
+    filtrar:'Filter...', todosPeriodos:'All periods',
+    sinVentas:'No sales yet', sinPedidos:'No orders',
+    operaciones:'CEDIS OPERATIONS', calidad:'QUALITY CONTROL',
+    miFarmacia:'MY PHARMACY', misRutas:'MY ROUTES', administracion:'ADMINISTRATION',
+    scm:'SCM',
+  },
+  pt: {
+    dashboard:'Painel', inventario:'Inventário', almacen:'Armazém',
+    compras:'Compras', proveedores:'Fornecedores', kardex:'Kardex',
+    abc:'Análise ABC', pedidos:'Pedidos', farmacias:'Farmácias',
+    devoluciones:'Devoluções', cuarentena:'Quarentena',
+    finanzas:'Finanças', usuarios:'Usuários', cerrarSesion:'Sair',
+    lotesActivos:'Lotes Ativos', enRiesgo:'Em Risco (30d)',
+    pedidosActivos:'Pedidos Ativos', enRuta:'Em Trânsito',
+    utilidadNeta:'Lucro Líquido', enCuarentena:'Em Quarentena',
+    alertasReab:'ALERTAS DE REABASTECIMENTO', alertasBPA:'ALERTAS BPA — VALIDADE',
+    balanceInv:'Balanço de Inventário', topProductos:'Top Produtos',
+    filtrar:'Filtrar...', todosPeriodos:'Todos os períodos',
+    sinVentas:'Sem vendas', sinPedidos:'Nenhum pedido',
+    operaciones:'OPERAÇÕES CEDIS', calidad:'CONTROLE DE QUALIDADE',
+    miFarmacia:'MINHA FARMÁCIA', misRutas:'MINHAS ROTAS', administracion:'ADMINISTRAÇÃO',
+    scm:'SCM',
+  },
+  fr: {
+    dashboard:'Tableau de bord', inventario:'Inventaire', almacen:'Entrepôt',
+    compras:'Achats', proveedores:'Fournisseurs', kardex:'Journal',
+    abc:'Analyse ABC', pedidos:'Commandes', farmacias:'Pharmacies',
+    devoluciones:'Retours', cuarentena:'Quarantaine',
+    finanzas:'Finances', usuarios:'Utilisateurs', cerrarSesion:'Déconnexion',
+    lotesActivos:'Lots Actifs', enRiesgo:'À Risque (30j)',
+    pedidosActivos:'Commandes Actives', enRuta:'En Transit',
+    utilidadNeta:'Bénéfice Net', enCuarentena:'En Quarantaine',
+    alertasReab:'ALERTES DE RÉAPPROVISIONNEMENT', alertasBPA:'ALERTES BPA — EXPIRATION',
+    balanceInv:'Bilan Inventaire', topProductos:'Top Produits',
+    filtrar:'Filtrer...', todosPeriodos:'Toutes les périodes',
+    sinVentas:'Aucune vente', sinPedidos:'Aucune commande',
+    operaciones:'OPÉRATIONS CEDIS', calidad:'CONTRÔLE QUALITÉ',
+    miFarmacia:'MA PHARMACIE', misRutas:'MES ITINÉRAIRES', administracion:'ADMINISTRATION',
+    scm:'SCM',
+  },
+  it: {
+    dashboard:'Cruscotto', inventario:'Inventario', almacen:'Magazzino',
+    compras:'Acquisti', proveedores:'Fornitori', kardex:'Registro',
+    abc:'Analisi ABC', pedidos:'Ordini', farmacias:'Farmacie',
+    devoluciones:'Resi', cuarentena:'Quarantena',
+    finanzas:'Finanze', usuarios:'Utenti', cerrarSesion:'Esci',
+    lotesActivos:'Lotti Attivi', enRiesgo:'A Rischio (30g)',
+    pedidosActivos:'Ordini Attivi', enRuta:'In Transito',
+    utilidadNeta:'Utile Netto', enCuarentena:'In Quarantena',
+    alertasReab:'AVVISI DI RIFORNIMENTO', alertasBPA:'AVVISI BPA — SCADENZA',
+    balanceInv:'Bilancio Inventario', topProductos:'Top Prodotti',
+    filtrar:'Filtra...', todosPeriodos:'Tutti i periodi',
+    sinVentas:'Nessuna vendita', sinPedidos:'Nessun ordine',
+    operaciones:'OPERAZIONI CEDIS', calidad:'CONTROLLO QUALITÀ',
+    miFarmacia:'LA MIA FARMACIA', misRutas:'I MIEI PERCORSI', administracion:'AMMINISTRAZIONE',
+    scm:'SCM',
+  },
+  de: {
+    dashboard:'Dashboard', inventario:'Inventar', almacen:'Lager',
+    compras:'Einkauf', proveedores:'Lieferanten', kardex:'Buchungsjournal',
+    abc:'ABC-Analyse', pedidos:'Bestellungen', farmacias:'Apotheken',
+    devoluciones:'Retouren', cuarentena:'Quarantäne',
+    finanzas:'Finanzen', usuarios:'Benutzer', cerrarSesion:'Abmelden',
+    lotesActivos:'Aktive Chargen', enRiesgo:'Risikoartikel (30T)',
+    pedidosActivos:'Aktive Bestellungen', enRuta:'Unterwegs',
+    utilidadNeta:'Nettogewinn', enCuarentena:'In Quarantäne',
+    alertasReab:'NACHSCHUB-WARNUNGEN', alertasBPA:'BPA-WARNUNGEN — ABLAUF',
+    balanceInv:'Inventarbilanz', topProductos:'Top-Produkte',
+    filtrar:'Filtern...', todosPeriodos:'Alle Zeiträume',
+    sinVentas:'Noch kein Umsatz', sinPedidos:'Keine Bestellungen',
+    operaciones:'CEDIS-BETRIEB', calidad:'QUALITÄTSKONTROLLE',
+    miFarmacia:'MEINE APOTHEKE', misRutas:'MEINE ROUTEN', administracion:'VERWALTUNG',
+    scm:'SCM',
+  },
+};
+
+let currentLang = localStorage.getItem('nexus_lang') || 'es';
+
+function T(key){
+    return (I18N[currentLang]||I18N['es'])[key] || (I18N['es'])[key] || key;
+}
+
+function setLang(lang){
+    currentLang = lang;
+    localStorage.setItem('nexus_lang', lang);
+    ['es','en','pt','fr','it','de'].forEach(l=>{
+        const b=document.getElementById('lang-'+l);
+        if(!b) return;
+        b.className = l===lang
+            ? 'text-[10px] px-2 py-1 rounded font-bold bg-blue-600 text-white'
+            : 'text-[10px] px-2 py-1 rounded font-bold bg-slate-700 text-slate-300 hover:bg-slate-600';
+    });
+    aplicarIdioma();
+}
+
+function aplicarIdioma(){
+    const navMap = {
+        'v-dash':'dashboard','v-alm':'inventario','v-com':'compras',
+        'v-pro':'proveedores','v-kar':'kardex','v-abc':'abc',
+        'v-pedidos':'pedidos','v-farmacias':'farmacias',
+        'v-devoluciones':'devoluciones','v-cuarentena':'cuarentena',
+        'v-fin':'finanzas','v-usr':'usuarios',
+    };
+    const emojiMap = {
+        'v-dash':'📊 ','v-alm':'📦 ','v-com':'🛒 ','v-pro':'🏢 ',
+        'v-kar':'🕒 ','v-abc':'🏷️ ','v-pedidos':'📋 ','v-farmacias':'🏪 ',
+        'v-devoluciones':'🔄 ','v-cuarentena':'🔴 ','v-fin':'💰 ','v-usr':'👥 ',
+    };
+    document.querySelectorAll('nav button').forEach(b=>{
+        const oc = b.getAttribute('onclick')||'';
+        const m = oc.match(/cambiarVista\('(.+)'\)/);
+        if(m && navMap[m[1]]) b.innerText = (emojiMap[m[1]]||'') + T(navMap[m[1]]);
+    });
+    // Sección labels
+    const secMap = [
+        ['Almacén','almacen'],['Warehouse','almacen'],['Armazém','almacen'],['Entrepôt','almacen'],['Magazzino','almacen'],['Lager','almacen'],
+        ['SCM','scm'],
+        ['Operaciones','operaciones'],['Operations','operaciones'],['Operações','operaciones'],['Opérations','operaciones'],['Operazioni','operaciones'],['Betrieb','operaciones'],
+        ['Control de Calidad','calidad'],['Quality Control','calidad'],['Controle de Qualidade','calidad'],['Contrôle','calidad'],['Controllo','calidad'],['Qualität','calidad'],
+        ['Mi Farmacia','miFarmacia'],['My Pharmacy','miFarmacia'],['Minha Farmácia','miFarmacia'],['Ma Pharmacie','miFarmacia'],
+        ['Mis Rutas','misRutas'],['My Routes','misRutas'],
+        ['Administración','administracion'],['Administration','administracion'],['Administração','administracion'],['Amministrazione','administracion'],['Verwaltung','administracion'],
+    ];
+    document.querySelectorAll('nav p').forEach(p=>{
+        const txt = p.innerText.trim();
+        for(const [match, key] of secMap){
+            if(txt.toUpperCase().includes(match.toUpperCase())){
+                p.innerText = T(key).toUpperCase(); break;
+            }
+        }
+    });
+    // Cards del dashboard
+    [['d-lot','lotesActivos'],['d-rie','enRiesgo'],['d-ped','pedidosActivos'],
+     ['d-ruta','enRuta'],['card-utilidad','utilidadNeta'],['card-cuarentena','enCuarentena']
+    ].forEach(([id,key])=>{
+        const el=document.getElementById(id);
+        if(el){ const lbl=el.querySelector('p:first-child'); if(lbl) lbl.innerText=T(key); }
+    });
+    // Panels BPA y alertas
+    const pA=document.getElementById('panel-alertas');
+    if(pA){ const h=pA.querySelector('h3'); if(h) h.innerText='⚠️ '+T('alertasReab'); }
+    const pBH=document.getElementById('panel-bpa');
+    if(pBH){ const h=pBH.querySelector('h3'); if(h) h.innerText='🧪 '+T('alertasBPA'); }
+    // Logout
+    const lo=document.getElementById('btn-logout'); if(lo) lo.innerText=T('cerrarSesion');
+    // Filtro inventario placeholder
+    const fi=document.getElementById('f-inv'); if(fi) fi.placeholder='🔍 '+T('filtrar');
+    // Selector periodos finanzas
+    const sfm=document.getElementById('f_filtro_mes');
+    if(sfm && sfm.options[0]) sfm.options[0].text=T('todosPeriodos');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+    const saved=localStorage.getItem('nexus_lang')||'es';
+    setLang(saved);
+    autoLogin();
+});
+
+// MENU MOVIL
+function abrirMenu(){
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('overlay-menu').classList.add('open');
+}
+function cerrarMenu(){
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay-menu').classList.remove('open');
+}
+// cerrar sidebar al navegar en movil
+const _cvOrig=cambiarVista;
+window.cambiarVista=function(id){ _cvOrig(id); if(window.innerWidth<=768) cerrarMenu(); }
+// re-enlazar botones del sidebar para que usen la version overrideada
+document.querySelectorAll('nav button[onclick]').forEach(b=>{
+    const m=b.getAttribute('onclick').match(/cambiarVista\('(.+)'\)/);
+    if(m) b.onclick=()=>cambiarVista(m[1]);
+});
 </script>
 </body>
 </html>
